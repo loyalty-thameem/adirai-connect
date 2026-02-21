@@ -156,5 +156,101 @@ export const openApiSpec = {
         },
       },
     },
+    '/community/feed': {
+      get: {
+        summary: 'Community feed with ranking score',
+        responses: {
+          '200': { description: 'Feed items' },
+        },
+      },
+    },
+    '/community/posts': {
+      post: {
+        summary: 'Create community post',
+        responses: {
+          '201': { description: 'Post created' },
+        },
+      },
+    },
+    '/community/complaints': {
+      post: {
+        summary: 'Create complaint',
+        responses: {
+          '201': { description: 'Complaint created' },
+        },
+      },
+    },
+    '/community/listings': {
+      get: {
+        summary: 'List jobs/business/offers',
+        responses: {
+          '200': { description: 'Listings' },
+        },
+      },
+      post: {
+        summary: 'Create listing',
+        responses: {
+          '201': { description: 'Listing created' },
+        },
+      },
+    },
+    '/community/events': {
+      get: {
+        summary: 'List events and announcements',
+        responses: {
+          '200': { description: 'Events list' },
+        },
+      },
+      post: {
+        summary: 'Create event',
+        responses: {
+          '201': { description: 'Event created' },
+        },
+      },
+    },
+    '/community/contacts': {
+      get: {
+        summary: 'Emergency and important contacts',
+        responses: {
+          '200': { description: 'Contacts list' },
+        },
+      },
+    },
+    '/community/polls': {
+      get: {
+        summary: 'List polls',
+        responses: {
+          '200': { description: 'Polls list' },
+        },
+      },
+      post: {
+        summary: 'Create poll',
+        responses: {
+          '201': { description: 'Poll created' },
+        },
+      },
+    },
+    '/community/groups': {
+      get: {
+        summary: 'List groups',
+        responses: {
+          '200': { description: 'Groups list' },
+        },
+      },
+      post: {
+        summary: 'Create group (max 3 per user)',
+        responses: {
+          '201': { description: 'Group created' },
+        },
+      },
+    },
+    '/community/suggestions': {
+      get: {
+        summary: 'Suggested nearby users/groups/business',
+        responses: {
+          '200': { description: 'Suggestions' },
+        },
+      },
+    },
   },
 };

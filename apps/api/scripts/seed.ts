@@ -6,6 +6,10 @@ import { GroupModel } from '../src/modules/admin/group.model.js';
 import { ModerationFlagModel } from '../src/modules/admin/moderation-flag.model.js';
 import { PostModel } from '../src/modules/admin/post.model.js';
 import { SecurityEventModel } from '../src/modules/admin/security-event.model.js';
+import { ContactModel } from '../src/modules/community/contact.model.js';
+import { EventModel } from '../src/modules/community/event.model.js';
+import { ListingModel } from '../src/modules/community/listing.model.js';
+import { PollModel } from '../src/modules/community/poll.model.js';
 import { UserModel } from '../src/modules/users/user.model.js';
 
 async function seed(): Promise<void> {
@@ -17,6 +21,10 @@ async function seed(): Promise<void> {
   await GroupModel.deleteMany({});
   await ModerationFlagModel.deleteMany({});
   await SecurityEventModel.deleteMany({});
+  await ListingModel.deleteMany({});
+  await EventModel.deleteMany({});
+  await ContactModel.deleteMany({});
+  await PollModel.deleteMany({});
 
   const users = await UserModel.insertMany([
     {
@@ -93,6 +101,68 @@ async function seed(): Promise<void> {
     riskScore: 62,
     details: { reason: 'Multiple failed logins' },
     resolved: false,
+  });
+
+  await ListingModel.insertMany([
+    {
+      userId: demoUser._id,
+      type: 'job',
+      title: 'Sales Executive Needed',
+      description: 'Local store looking for full-time sales executive.',
+      area: 'Adirai East',
+      contactName: 'Basha Stores',
+      contactPhone: '9000000002',
+      priceLabel: 'Salary: 15k/month',
+    },
+    {
+      userId: demoUser._id,
+      type: 'business',
+      title: 'Fresh Fish Market Offer',
+      description: 'Weekend special discount for local residents.',
+      area: 'Adirai East',
+      contactName: 'Sea Foods Hub',
+      contactPhone: '9000000002',
+    },
+  ]);
+
+  await EventModel.insertMany([
+    {
+      title: 'Local Sports Tournament',
+      description: 'Ward-level football tournament this Sunday.',
+      category: 'sports',
+      eventDate: new Date(Date.now() + 4 * 24 * 3600 * 1000),
+      area: 'Adirai East',
+      venue: 'Municipal Ground',
+      createdBy: adminUser._id,
+    },
+    {
+      title: 'School Annual Day',
+      description: 'Parents and students invited.',
+      category: 'school',
+      eventDate: new Date(Date.now() + 8 * 24 * 3600 * 1000),
+      area: 'Adirai East',
+      venue: 'Adirai Public School',
+      createdBy: adminUser._id,
+    },
+  ]);
+
+  await ContactModel.insertMany([
+    { type: 'ambulance', name: 'Adirai Ambulance', phone: '108', area: 'Adirai East', available24x7: true },
+    { type: 'police', name: 'Adirai Police', phone: '100', area: 'Adirai East', available24x7: true },
+    { type: 'doctor', name: 'Dr. Fathima', phone: '9876501234', area: 'Adirai East' },
+    { type: 'blood_donor', name: 'A+ Donor Group', phone: '9345609876', area: 'Adirai East', available24x7: true },
+  ]);
+
+  await PollModel.create({
+    question: 'Which issue should be prioritized this week?',
+    options: [
+      { id: 'opt_1', label: 'Water', votes: 0 },
+      { id: 'opt_2', label: 'Road', votes: 0 },
+      { id: 'opt_3', label: 'Electricity', votes: 0 },
+    ],
+    area: 'Adirai East',
+    endsAt: new Date(Date.now() + 5 * 24 * 3600 * 1000),
+    createdBy: adminUser._id,
   });
 
   console.log('Seed complete');
