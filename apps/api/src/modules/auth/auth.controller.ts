@@ -13,6 +13,7 @@ import {
   refreshTokenSchema,
   registerSchema,
   resetPasswordSchema,
+  privacyConsentSchema,
 } from './auth.schema.js';
 import {
   createAccessToken,
@@ -75,6 +76,7 @@ async function issueSessionTokens(
 
 export async function register(req: AuthenticatedRequest, res: Response): Promise<void> {
   const data = registerSchema.parse(req.body);
+  const { consent, password, ...rest } = data;
   const existing = await UserModel.findOne({ mobile: data.mobile }).lean();
   if (existing) {
     res.status(409).json({ message: 'Mobile already registered' });
@@ -82,8 +84,16 @@ export async function register(req: AuthenticatedRequest, res: Response): Promis
   }
 
   const user = await UserModel.create({
-    ...data,
-    passwordHash: data.password ? hashPassword(data.password) : undefined,
+    ...rest,
+    passwordHash: password ? hashPassword(password) : undefined,
+    privacy: consent
+      ? {
+          termsAcceptedAt: consent.termsAccepted ? new Date() : undefined,
+          privacyAcceptedAt: consent.privacyAccepted ? new Date() : undefined,
+          dataProcessingConsentAt: consent.dataProcessingAccepted ? new Date() : undefined,
+          marketingOptIn: consent.marketingOptIn ?? false,
+        }
+      : undefined,
     status: 'active',
     role: 'user',
   });
@@ -454,4 +464,34 @@ export async function userSessionHistoryForAdmin(
   const sessions = await SessionModel.find({ userId }).sort({ createdAt: -1 }).limit(50).lean();
   const audits = await LoginAuditModel.find({ userId }).sort({ createdAt: -1 }).limit(100).lean();
   res.json({ sessions, audits });
+}
+
+export async function updatePrivacyConsent(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const userId = req.auth?.userId;
+  if (!userId) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  const payload = privacyConsentSchema.parse(req.body);
+  const setValues: Record<string, unknown> = {};
+  if (payload.termsAccepted !== undefined) {
+    setValues['privacy.termsAcceptedAt'] = payload.termsAccepted ? new Date() : null;
+  }
+  if (payload.privacyAccepted !== undefined) {
+    setValues['privacy.privacyAcceptedAt'] = payload.privacyAccepted ? new Date() : null;
+  }
+  if (payload.dataProcessingAccepted !== undefined) {
+    setValues['privacy.dataProcessingConsentAt'] = payload.dataProcessingAccepted ? new Date() : null;
+  }
+  if (payload.marketingOptIn !== undefined) {
+    setValues['privacy.marketingOptIn'] = payload.marketingOptIn;
+  }
+
+  const user = await UserModel.findByIdAndUpdate(userId, { $set: setValues }, { new: true }).lean();
+  if (!user) {
+    res.status(404).json({ message: 'User not found' });
+    return;
+  }
+  res.json({ message: 'Privacy preferences updated', privacy: user.privacy });
 }

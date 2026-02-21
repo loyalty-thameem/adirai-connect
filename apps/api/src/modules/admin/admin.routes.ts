@@ -11,6 +11,7 @@ import {
   getUserInsights,
   listCampaigns,
   listComplaints,
+  listAuditLogs,
   listGroups,
   listModerationFlags,
   listUsers,
@@ -36,6 +37,7 @@ adminRouter.use(requireRoles(['super_admin', 'admin', 'moderator']));
 
 adminRouter.get('/dashboard/analytics', dashboardAnalytics);
 adminRouter.get('/dashboard/security', dashboardSecurity);
+adminRouter.get('/security/audit-logs', listAuditLogs);
 
 adminRouter.get('/users', listUsers);
 adminRouter.get('/users/:userId', getUser);
@@ -65,4 +67,3 @@ adminRouter.get('/messaging/campaigns', listCampaigns);
 adminRouter.get('/groups', listGroups);
 adminRouter.patch('/groups/:groupId/state', updateGroupState);
 adminRouter.delete('/groups/:groupId', removeGroup);
-

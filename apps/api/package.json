@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "lint": "echo \"configure eslint for api\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -33,4 +34,3 @@
     "typescript": "^5.8.0"
   }
 }
-

@@ -117,6 +117,19 @@ Base URL: `http://localhost:4000/api/v1/auth`
 }
 ```
 
+## 9) Privacy Consent
+
+`PATCH /privacy/consent` with `Authorization: Bearer <access_token>`
+
+```json
+{
+  "termsAccepted": true,
+  "privacyAccepted": true,
+  "dataProcessingAccepted": true,
+  "marketingOptIn": false
+}
+```
+
 ## cURL Smoke Tests
 
 ```bash
@@ -132,4 +145,3 @@ curl -X POST http://localhost:4000/api/v1/auth/login/password \
   -H "x-device-type: web" \
   -d "{\"mobile\":\"9000000002\",\"password\":\"StrongPass#123\"}"
 ```
-

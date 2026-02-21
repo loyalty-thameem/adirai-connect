@@ -6,6 +6,8 @@ import { PostModel } from '../admin/post.model.js';
 import { UserModel } from '../users/user.model.js';
 import { ContactModel } from './contact.model.js';
 import { EventModel } from './event.model.js';
+import { getCachedFeed, invalidateFeedCache, setCachedFeed } from './feed-cache.js';
+import { calculatePostScore, urgentDeliveryPlan } from './feed-ranking.js';
 import { ListingModel } from './listing.model.js';
 import { PollModel } from './poll.model.js';
 import { PollVoteModel } from './poll-vote.model.js';
@@ -22,11 +24,6 @@ import {
   votePollSchema,
 } from './community.schema.js';
 
-function recencyWeight(createdAt: Date): number {
-  const ageHours = Math.max(1, (Date.now() - createdAt.getTime()) / (1000 * 3600));
-  return Math.round(100 / ageHours);
-}
-
 async function resolveUserRef(input: string): Promise<string | null> {
   if (mongoose.isValidObjectId(input)) {
     return input;
@@ -40,6 +37,12 @@ async function resolveUserRef(input: string): Promise<string | null> {
 
 export async function getFeed(req: Request, res: Response): Promise<void> {
   const area = typeof req.query.area === 'string' ? req.query.area : undefined;
+  const cached = getCachedFeed<{ items: Array<Record<string, unknown>> }>(area);
+  if (cached) {
+    res.json({ ...cached, cache: 'hit' });
+    return;
+  }
+
   const filter: Record<string, unknown> = { moderationStatus: { $ne: 'rejected' } };
   if (area) {
     filter.locationTag = area;
@@ -48,13 +51,7 @@ export async function getFeed(req: Request, res: Response): Promise<void> {
   const posts = await PostModel.find(filter).sort({ createdAt: -1 }).limit(120).lean();
   const scored = posts
     .map((post) => {
-      const score =
-        post.likesCount * 2 +
-        post.commentsCount * 3 +
-        post.importantVotes * 5 +
-        post.urgentVotes * 10 +
-        recencyWeight(post.createdAt) -
-        Math.min(50, (post.suspiciousSignalsCount ?? 0) * 5);
+      const score = calculatePostScore(post);
       const pinned = Boolean(post.importantPinnedUntil && post.importantPinnedUntil > new Date());
       const topPlacement = Boolean(post.topPlacementUntil && post.topPlacementUntil > new Date());
       return { ...post, score, pinned, topPlacement };
@@ -65,7 +62,9 @@ export async function getFeed(req: Request, res: Response): Promise<void> {
       return b.score - a.score;
     });
 
-  res.json({ items: scored });
+  const payload = { items: scored };
+  setCachedFeed(area, payload);
+  res.json({ ...payload, cache: 'miss' });
 }
 
 export async function createPost(req: Request, res: Response): Promise<void> {
@@ -76,6 +75,7 @@ export async function createPost(req: Request, res: Response): Promise<void> {
     return;
   }
   const post = await PostModel.create({ ...payload, userId: userRef });
+  invalidateFeedCache(payload.locationTag);
   res.status(201).json(post);
 }
 
@@ -106,6 +106,7 @@ export async function reactPost(req: Request, res: Response): Promise<void> {
   if (payload.action === 'comment') post.commentsCount += 1;
   if (payload.action === 'report') post.reportsCount += 1;
   await post.save();
+  invalidateFeedCache(post.locationTag ?? undefined);
 
   res.json(post);
 }
@@ -199,28 +200,6 @@ async function validateSignalAction(
   return { post } as const;
 }
 
-function urgentDeliveryPlan(urgentVotes: number, area: string) {
-  if (urgentVotes >= 10) {
-    return {
-      tier: 'global',
-      reach: 300,
-      stages: [
-        { stage: 'same_area', users: 120, area },
-        { stage: 'nearby_wards', users: 120 },
-        { stage: 'wider_adirai', users: 60 },
-      ],
-    };
-  }
-  if (urgentVotes >= 1) {
-    return {
-      tier: 'local',
-      reach: 30,
-      stages: [{ stage: 'same_area', users: 30, area }],
-    };
-  }
-  return { tier: 'none', reach: 0, stages: [] as Array<Record<string, unknown>> };
-}
-
 export async function markUrgent(req: Request, res: Response): Promise<void> {
   const payload = postSignalSchema.parse(req.body);
   const userRef = await resolveUserRef(payload.userId);
@@ -261,6 +240,7 @@ export async function markUrgent(req: Request, res: Response): Promise<void> {
   post.urgentBoostReach = deliveryPlan.reach;
   post.urgentBoostUpdatedAt = new Date();
   await post.save();
+  invalidateFeedCache(post.locationTag ?? undefined);
 
   res.json({
     postId: post.id,
@@ -307,6 +287,7 @@ export async function markImportant(req: Request, res: Response): Promise<void> 
     post.topPlacementUntil = new Date(Date.now() + 24 * 3600 * 1000);
   }
   await post.save();
+  invalidateFeedCache(post.locationTag ?? undefined);
 
   res.json({
     postId: post.id,

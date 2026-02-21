@@ -6,6 +6,8 @@ import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import { errorHandler } from './common/middleware/errorHandler.js';
 import { notFound } from './common/middleware/notFound.js';
+import { createRateLimit } from './common/middleware/rateLimit.js';
+import { requestAudit } from './common/middleware/requestAudit.js';
 import { openApiSpec } from './docs/openapi.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -23,11 +25,24 @@ app.use(
 );
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
+app.use(requestAudit);
 
 app.use('/api/v1/health', healthRouter);
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/admin', adminRouter);
-app.use('/api/v1/community', communityRouter);
+app.use(
+  '/api/v1/auth',
+  createRateLimit({ windowMs: 60 * 1000, limit: 80, keyPrefix: 'auth' }),
+  authRouter,
+);
+app.use(
+  '/api/v1/admin',
+  createRateLimit({ windowMs: 60 * 1000, limit: 200, keyPrefix: 'admin' }),
+  adminRouter,
+);
+app.use(
+  '/api/v1/community',
+  createRateLimit({ windowMs: 60 * 1000, limit: 240, keyPrefix: 'community' }),
+  communityRouter,
+);
 
 if (env.SWAGGER_ENABLED) {
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));

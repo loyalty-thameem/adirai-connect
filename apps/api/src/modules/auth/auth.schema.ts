@@ -8,6 +8,14 @@ export const registerSchema = z.object({
   language: z.enum(['ta', 'en', 'ar']).default('ta'),
   email: z.string().email().optional(),
   password: z.string().min(8).max(72).optional(),
+  consent: z
+    .object({
+      termsAccepted: z.boolean(),
+      privacyAccepted: z.boolean(),
+      dataProcessingAccepted: z.boolean(),
+      marketingOptIn: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const otpRequestSchema = z.object({
@@ -57,4 +65,11 @@ export const oauthLoginSchema = z.object({
   area: z.string().min(2).max(100).optional(),
   ward: z.string().max(100).optional(),
   language: z.enum(['ta', 'en', 'ar']).default('ta'),
+});
+
+export const privacyConsentSchema = z.object({
+  termsAccepted: z.boolean().optional(),
+  privacyAccepted: z.boolean().optional(),
+  dataProcessingAccepted: z.boolean().optional(),
+  marketingOptIn: z.boolean().optional(),
 });

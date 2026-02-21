@@ -10,6 +10,7 @@ All endpoints require:
 
 - `GET /dashboard/analytics`
 - `GET /dashboard/security`
+- `GET /security/audit-logs?method=POST&statusCode=429`
 
 ## User Control
 
@@ -92,4 +93,3 @@ Broadcast example:
 - `GET /groups`
 - `PATCH /groups/:groupId/state`
 - `DELETE /groups/:groupId`
-

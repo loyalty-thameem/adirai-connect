@@ -7,6 +7,7 @@ import { SessionModel } from '../auth/session.model.js';
 import { UserModel } from '../users/user.model.js';
 import { ComplaintModel } from './complaint.model.js';
 import { GroupModel } from './group.model.js';
+import { AuditLogModel } from './audit-log.model.js';
 import { MessageCampaignModel } from './message-campaign.model.js';
 import { ModerationFlagModel } from './moderation-flag.model.js';
 import { ModerationSettingsModel } from './moderation-settings.model.js';
@@ -67,7 +68,7 @@ export async function dashboardAnalytics(_req: AuthenticatedRequest, res: Respon
 }
 
 export async function dashboardSecurity(_req: AuthenticatedRequest, res: Response): Promise<void> {
-  const [failedLogins, suspiciousIps, multiAccountRisk, openEvents] = await Promise.all([
+  const [failedLogins, suspiciousIps, multiAccountRisk, openEvents, recentAuditWrites] = await Promise.all([
     LoginAuditModel.countDocuments({
       event: 'login_failed',
       createdAt: { $gte: new Date(Date.now() - 24 * 3600 * 1000) },
@@ -81,6 +82,7 @@ export async function dashboardSecurity(_req: AuthenticatedRequest, res: Respons
     ]),
     SecurityEventModel.countDocuments({ eventType: 'multi_account_risk', resolved: false }),
     SecurityEventModel.find({ resolved: false }).sort({ createdAt: -1 }).limit(50).lean(),
+    AuditLogModel.find().sort({ createdAt: -1 }).limit(20).lean(),
   ]);
 
   res.json({
@@ -88,7 +90,22 @@ export async function dashboardSecurity(_req: AuthenticatedRequest, res: Respons
     suspiciousIps,
     multiAccountRiskOpen: multiAccountRisk,
     openEvents,
+    recentAuditWrites,
   });
+}
+
+export async function listAuditLogs(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const statusCode = typeof req.query.statusCode === 'string' ? Number(req.query.statusCode) : undefined;
+  const method = typeof req.query.method === 'string' ? req.query.method.toUpperCase() : undefined;
+  const path = typeof req.query.path === 'string' ? req.query.path : undefined;
+
+  const filter: Record<string, unknown> = {};
+  if (Number.isFinite(statusCode)) filter.statusCode = statusCode;
+  if (method) filter.method = method;
+  if (path) filter.path = { $regex: path, $options: 'i' };
+
+  const logs = await AuditLogModel.find(filter).sort({ createdAt: -1 }).limit(500).lean();
+  res.json({ items: logs });
 }
 
 export async function listUsers(req: AuthenticatedRequest, res: Response): Promise<void> {

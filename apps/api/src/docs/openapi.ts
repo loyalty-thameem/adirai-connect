@@ -102,6 +102,14 @@ export const openApiSpec = {
         },
       },
     },
+    '/auth/privacy/consent': {
+      patch: {
+        summary: 'Update user privacy consent preferences',
+        responses: {
+          '200': { description: 'Consent updated' },
+        },
+      },
+    },
     '/admin/dashboard/analytics': {
       get: {
         summary: 'Admin analytics dashboard',
@@ -115,6 +123,14 @@ export const openApiSpec = {
         summary: 'Admin security dashboard',
         responses: {
           '200': { description: 'Security payload' },
+        },
+      },
+    },
+    '/admin/security/audit-logs': {
+      get: {
+        summary: 'Admin audit trail for mutating requests',
+        responses: {
+          '200': { description: 'Audit logs list' },
         },
       },
     },

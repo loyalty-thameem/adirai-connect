@@ -31,6 +31,12 @@ const userSchema = new Schema(
     area: { type: String, required: true },
     ward: { type: String },
     language: { type: String, default: 'ta' },
+    privacy: {
+      termsAcceptedAt: { type: Date },
+      privacyAcceptedAt: { type: Date },
+      dataProcessingConsentAt: { type: Date },
+      marketingOptIn: { type: Boolean, default: false },
+    },
     loginMeta: {
       lastLoginAt: { type: Date },
       lastSeenAt: { type: Date },

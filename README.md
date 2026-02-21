@@ -24,6 +24,7 @@ Step 1 scaffold for:
 - Step 2 auth endpoint details and samples: `apps/api/AUTH_API.md`.
 - Step 3 admin endpoint details and samples: `apps/api/ADMIN_API.md`.
 - Step 4 community endpoint details and samples: `apps/api/COMMUNITY_API.md`.
+- Step 6 hardening notes: `apps/api/HARDENING.md`.
 - Swagger endpoint: `/docs` (when enabled).
 - Seed script file is present in `apps/api/scripts/seed.ts`.
 - React Native app is planned later; API includes `deviceType`, `appVersion`, session fields for mobile readiness.

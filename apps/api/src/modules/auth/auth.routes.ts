@@ -5,6 +5,7 @@ import {
   mySessionHistory,
   oauthLogin,
   refreshSession,
+  updatePrivacyConsent,
   requestPasswordResetOtp,
   loginWithPassword,
   register,
@@ -26,6 +27,7 @@ authRouter.post('/login/oauth', oauthLogin);
 authRouter.post('/token/refresh', refreshSession);
 authRouter.post('/logout', requireAuth, logout);
 authRouter.post('/password/reset', resetPassword);
+authRouter.patch('/privacy/consent', requireAuth, updatePrivacyConsent);
 authRouter.get('/sessions/me', requireAuth, mySessionHistory);
 authRouter.post(
   '/sessions/force-logout',
