@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { mobileApi } from '../../shared/api';
-import type { MobileSession } from '../../shared/types';
+import { useAuth } from './AuthContext';
 
-type Props = {
-  onAuthenticated: (session: MobileSession) => void;
-};
-
-function newSessionId() {
-  return `mob-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-}
-
-export function AuthScreen({ onAuthenticated }: Props) {
+export function AuthScreen() {
+  const { loginWithOtp, loginWithPassword, requestOtp } = useAuth();
   const [mode, setMode] = useState<'password' | 'otp'>('password');
   const [mobile, setMobile] = useState('9000000002');
   const [password, setPassword] = useState('StrongPass#123');
@@ -22,15 +14,7 @@ export function AuthScreen({ onAuthenticated }: Props) {
 
   const onPasswordLogin = async () => {
     try {
-      const response = await mobileApi.passwordLogin(mobile, password);
-      onAuthenticated({
-        mobile,
-        area,
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        sessionId: newSessionId(),
-        startedAtMs: Date.now(),
-      });
+      await loginWithPassword({ mobile, password, area });
     } catch (err) {
       setStatus((err as Error).message);
     }
@@ -38,9 +22,9 @@ export function AuthScreen({ onAuthenticated }: Props) {
 
   const onRequestOtp = async () => {
     try {
-      const response = await mobileApi.requestOtp(mobile);
-      setDevOtp(response.otpDevOnly);
-      setStatus(`OTP sent. Dev OTP: ${response.otpDevOnly}`);
+      const otpDevOnly = await requestOtp(mobile);
+      setDevOtp(otpDevOnly);
+      setStatus(`OTP sent. Dev OTP: ${otpDevOnly}`);
     } catch (err) {
       setStatus((err as Error).message);
     }
@@ -48,15 +32,7 @@ export function AuthScreen({ onAuthenticated }: Props) {
 
   const onVerifyOtp = async () => {
     try {
-      const response = await mobileApi.verifyOtpLogin(mobile, otp);
-      onAuthenticated({
-        mobile,
-        area,
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
-        sessionId: newSessionId(),
-        startedAtMs: Date.now(),
-      });
+      await loginWithOtp({ mobile, otp, area });
     } catch (err) {
       setStatus((err as Error).message);
     }
@@ -120,4 +96,3 @@ const styles = StyleSheet.create({
   hint: { color: '#0369a1', fontSize: 12 },
   status: { color: '#b91c1c', fontSize: 12 },
 });
-

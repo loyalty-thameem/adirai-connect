@@ -78,6 +78,14 @@ export const openApiSpec = {
         },
       },
     },
+    '/auth/logout-all': {
+      post: {
+        summary: 'Logout all sessions for current user',
+        responses: {
+          '200': { description: 'All sessions revoked' },
+        },
+      },
+    },
     '/auth/password/reset': {
       post: {
         summary: 'Reset password with reset token',

@@ -43,6 +43,22 @@ export const mobileApi = {
       method: 'POST',
       body: JSON.stringify({ mobile, otp, purpose: 'login' }),
     }),
+  refreshSession: (refreshToken: string) =>
+    request<{ accessToken: string; refreshToken: string }>('/auth/token/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }),
+  logout: (accessToken: string, refreshToken: string) =>
+    request<{ message: string }>('/auth/logout', {
+      method: 'POST',
+      accessToken,
+      body: JSON.stringify({ refreshToken }),
+    }),
+  logoutAll: (accessToken: string) =>
+    request<{ message: string; revokedSessions: number }>('/auth/logout-all', {
+      method: 'POST',
+      accessToken,
+    }),
   passwordLogin: (mobile: string, password: string) =>
     request<{ accessToken: string; refreshToken: string }>('/auth/login/password', {
       method: 'POST',
@@ -84,4 +100,3 @@ export const mobileApi = {
       body: JSON.stringify(payload),
     }),
 };
-

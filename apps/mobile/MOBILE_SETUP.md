@@ -20,6 +20,15 @@ This folder is an Expo/React Native baseline scaffold for the Adirai Connect mob
    - `screen_view`
    - `action`
 
+## Session Hardening (Step 9)
+
+1. Persistent login session in local storage
+2. Silent token refresh on app restore
+3. Auto refresh every 10 minutes
+4. Settings actions:
+   - Logout current device
+   - Logout all devices
+
 ## Commands (once dependencies are installed)
 
 - `pnpm --filter @adirai/mobile dev`

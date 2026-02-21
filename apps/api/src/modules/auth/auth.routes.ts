@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   forceLogoutUser,
   logout,
+  logoutAllSessions,
   mySessionHistory,
   oauthLogin,
   refreshSession,
@@ -26,6 +27,7 @@ authRouter.post('/login/password', loginWithPassword);
 authRouter.post('/login/oauth', oauthLogin);
 authRouter.post('/token/refresh', refreshSession);
 authRouter.post('/logout', requireAuth, logout);
+authRouter.post('/logout-all', requireAuth, logoutAllSessions);
 authRouter.post('/password/reset', resetPassword);
 authRouter.patch('/privacy/consent', requireAuth, updatePrivacyConsent);
 authRouter.get('/sessions/me', requireAuth, mySessionHistory);

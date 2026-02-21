@@ -389,6 +389,32 @@ export async function logout(req: AuthenticatedRequest, res: Response): Promise<
   res.json({ message: 'Logged out' });
 }
 
+export async function logoutAllSessions(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const userId = req.auth?.userId;
+  if (!userId) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  const result = await SessionModel.updateMany(
+    { userId, revokedAt: { $exists: false } },
+    { revokedAt: new Date() },
+  );
+
+  await UserModel.findByIdAndUpdate(userId, {
+    $set: {
+      'loginMeta.isOnline': false,
+      'loginMeta.lastSeenAt': new Date(),
+    },
+  });
+  await audit(userId, 'logout', req);
+
+  res.json({
+    message: 'All sessions logged out',
+    revokedSessions: result.modifiedCount,
+  });
+}
+
 export async function resetPassword(req: AuthenticatedRequest, res: Response): Promise<void> {
   const data = resetPasswordSchema.parse(req.body);
   const resetRequest = await PasswordResetModel.findOne({

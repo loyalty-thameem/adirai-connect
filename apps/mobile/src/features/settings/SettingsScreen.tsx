@@ -4,10 +4,11 @@ import { mobileApi } from '../../shared/api';
 
 type Props = {
   onScreenViewed: (screen: string) => void;
-  onLogout: () => void;
+  onLogoutCurrent: () => void;
+  onLogoutAllDevices: () => void;
 };
 
-export function SettingsScreen({ onScreenViewed, onLogout }: Props) {
+export function SettingsScreen({ onScreenViewed, onLogoutCurrent, onLogoutAllDevices }: Props) {
   const [runtimeConfig, setRuntimeConfig] = useState<Record<string, unknown> | null>(null);
   const [status, setStatus] = useState('');
 
@@ -29,8 +30,11 @@ export function SettingsScreen({ onScreenViewed, onLogout }: Props) {
       <Text style={styles.heading}>Settings</Text>
       {runtimeConfig ? <Text style={styles.text}>{JSON.stringify(runtimeConfig, null, 2)}</Text> : null}
       {status ? <Text style={styles.error}>{status}</Text> : null}
-      <Pressable style={styles.button} onPress={onLogout}>
-        <Text style={styles.buttonText}>Logout</Text>
+      <Pressable style={styles.button} onPress={onLogoutCurrent}>
+        <Text style={styles.buttonText}>Logout Current Device</Text>
+      </Pressable>
+      <Pressable style={styles.buttonDanger} onPress={onLogoutAllDevices}>
+        <Text style={styles.buttonText}>Logout All Devices</Text>
       </Pressable>
     </View>
   );
@@ -42,6 +46,6 @@ const styles = StyleSheet.create({
   text: { color: '#334155', fontSize: 12 },
   error: { color: '#b91c1c', fontSize: 12 },
   button: { backgroundColor: '#334155', borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
+  buttonDanger: { backgroundColor: '#b91c1c', borderRadius: 9, paddingVertical: 10, alignItems: 'center' },
   buttonText: { color: '#fff', fontWeight: '700' },
 });
-

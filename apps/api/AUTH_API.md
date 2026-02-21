@@ -81,6 +81,12 @@ Base URL: `http://localhost:4000/api/v1/auth`
 }
 ```
 
+`POST /logout-all` with `Authorization: Bearer <access_token>`
+
+```json
+{}
+```
+
 ## 7) Forgot + Reset Password
 
 1. `POST /password/forgot`

@@ -5,5 +5,5 @@ export type MobileSession = {
   area: string;
   sessionId: string;
   startedAtMs: number;
+  updatedAtMs: number;
 };
-
