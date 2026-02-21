@@ -20,5 +20,8 @@ const mobileTelemetrySchema = new Schema(
   { timestamps: true },
 );
 
-export const MobileTelemetryModel = model('MobileTelemetry', mobileTelemetrySchema);
+mobileTelemetrySchema.index({ createdAt: -1, eventType: 1 });
+mobileTelemetrySchema.index({ eventType: 1, createdAt: -1, screen: 1 });
+mobileTelemetrySchema.index({ userId: 1, createdAt: -1 });
 
+export const MobileTelemetryModel = model('MobileTelemetry', mobileTelemetrySchema);

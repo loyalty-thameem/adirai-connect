@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import { env } from '../../config/env.js';
 
 export type JwtPayload = {
@@ -9,11 +9,13 @@ export type JwtPayload = {
 };
 
 export function createAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: env.ACCESS_TOKEN_TTL });
+  const options: SignOptions = { expiresIn: env.ACCESS_TOKEN_TTL as SignOptions['expiresIn'] };
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, options);
 }
 
 export function createRefreshToken(payload: JwtPayload): string {
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: env.REFRESH_TOKEN_TTL });
+  const options: SignOptions = { expiresIn: env.REFRESH_TOKEN_TTL as SignOptions['expiresIn'] };
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, options);
 }
 
 export function hashToken(value: string): string {
@@ -43,4 +45,3 @@ export function verifyRefreshToken(token: string): JwtPayload | null {
 export function generateOtpCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
-

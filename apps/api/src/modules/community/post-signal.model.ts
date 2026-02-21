@@ -23,6 +23,10 @@ postSignalSchema.index(
   { postId: 1, userId: 1, signalType: 1, accepted: 1 },
   { unique: true, partialFilterExpression: { accepted: true } },
 );
+postSignalSchema.index({ userId: 1, signalType: 1, accepted: 1, createdAt: -1 });
+postSignalSchema.index({ signalType: 1, accepted: 1, createdAt: -1, ipAddress: 1 });
+postSignalSchema.index({ signalType: 1, accepted: 1, createdAt: -1, deviceId: 1 });
+postSignalSchema.index({ postId: 1, signalType: 1, accepted: 1, ipAddress: 1 });
+postSignalSchema.index({ postId: 1, signalType: 1, accepted: 1, createdAt: -1 });
 
 export const PostSignalModel = model('PostSignal', postSignalSchema);
-

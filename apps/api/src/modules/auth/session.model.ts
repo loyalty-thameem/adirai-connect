@@ -19,4 +19,7 @@ const sessionSchema = new Schema(
   { timestamps: true },
 );
 
+sessionSchema.index({ userId: 1, revokedAt: 1, createdAt: -1 });
+sessionSchema.index({ userId: 1, revokedAt: 1, expiresAt: 1 });
+
 export const SessionModel = model('Session', sessionSchema);

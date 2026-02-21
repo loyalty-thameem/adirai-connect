@@ -39,6 +39,14 @@ export const openApiSpec = {
         },
       },
     },
+    '/health/metrics/prometheus': {
+      get: {
+        summary: 'Prometheus scrape endpoint for runtime metrics',
+        responses: {
+          '200': { description: 'Prometheus text metrics' },
+        },
+      },
+    },
     '/auth/register': {
       post: {
         summary: 'Register user',

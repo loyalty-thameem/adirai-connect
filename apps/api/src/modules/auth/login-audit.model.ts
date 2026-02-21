@@ -24,5 +24,8 @@ const loginAuditSchema = new Schema(
   { timestamps: true },
 );
 
-export const LoginAuditModel = model('LoginAudit', loginAuditSchema);
+loginAuditSchema.index({ userId: 1, createdAt: -1 });
+loginAuditSchema.index({ event: 1, createdAt: -1 });
+loginAuditSchema.index({ event: 1, ipAddress: 1, createdAt: -1 });
 
+export const LoginAuditModel = model('LoginAudit', loginAuditSchema);

@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { enqueueMobileTelemetry } from '../../common/background/write-queue.js';
 import { ComplaintModel } from '../admin/complaint.model.js';
 import { GroupModel } from '../admin/group.model.js';
 import { MobileConfigModel } from '../admin/mobile-config.model.js';
@@ -10,7 +11,6 @@ import { EventModel } from './event.model.js';
 import { getCachedFeed, invalidateFeedCache, setCachedFeed } from './feed-cache.js';
 import { calculatePostScore, urgentDeliveryPlan } from './feed-ranking.js';
 import { ListingModel } from './listing.model.js';
-import { MobileTelemetryModel } from './mobile-telemetry.model.js';
 import { PollModel } from './poll.model.js';
 import { PollVoteModel } from './poll-vote.model.js';
 import { PostSignalModel } from './post-signal.model.js';
@@ -26,6 +26,11 @@ import {
   postReactSchema,
   votePollSchema,
 } from './community.schema.js';
+
+type SignalValidationError = { code: number; message: string };
+type SignalValidationResult =
+  | { ok: true; post: any }
+  | { ok: false; error: SignalValidationError };
 
 async function resolveUserRef(input: string): Promise<string | null> {
   if (mongoose.isValidObjectId(input)) {
@@ -119,10 +124,10 @@ async function validateSignalAction(
   signalType: 'urgent' | 'important',
   userRef: string,
   req: Request,
-) {
+): Promise<SignalValidationResult> {
   const post = await PostModel.findById(postId);
   if (!post) {
-    return { error: { code: 404, message: 'Post not found' } } as const;
+    return { ok: false, error: { code: 404, message: 'Post not found' } };
   }
 
   if (String(post.userId) === String(userRef)) {
@@ -136,7 +141,7 @@ async function validateSignalAction(
       accepted: false,
       rejectedReason: 'self_vote_disallowed',
     });
-    return { error: { code: 400, message: 'Cannot vote on your own post' } } as const;
+    return { ok: false, error: { code: 400, message: 'Cannot vote on your own post' } };
   }
 
   const existingAccepted = await PostSignalModel.findOne({
@@ -156,7 +161,7 @@ async function validateSignalAction(
       accepted: false,
       rejectedReason: 'duplicate_vote',
     });
-    return { error: { code: 409, message: `Already marked ${signalType}` } } as const;
+    return { ok: false, error: { code: 409, message: `Already marked ${signalType}` } };
   }
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -177,7 +182,7 @@ async function validateSignalAction(
       accepted: false,
       rejectedReason: 'user_rate_limit_exceeded',
     });
-    return { error: { code: 429, message: 'Too many actions, retry later' } } as const;
+    return { ok: false, error: { code: 429, message: 'Too many actions, retry later' } };
   }
 
   const ipOrDeviceCount = await PostSignalModel.countDocuments({
@@ -197,13 +202,18 @@ async function validateSignalAction(
       accepted: false,
       rejectedReason: 'device_or_ip_rate_limit_exceeded',
     });
-    return { error: { code: 429, message: 'Suspicious traffic detected' } } as const;
+    return { ok: false, error: { code: 429, message: 'Suspicious traffic detected' } };
   }
 
-  return { post } as const;
+  return { ok: true, post };
 }
 
 export async function markUrgent(req: Request, res: Response): Promise<void> {
+  const postId = req.params.postId;
+  if (typeof postId !== 'string' || postId.trim().length === 0) {
+    res.status(400).json({ message: 'Invalid postId' });
+    return;
+  }
   const payload = postSignalSchema.parse(req.body);
   const userRef = await resolveUserRef(payload.userId);
   if (!userRef) {
@@ -211,8 +221,8 @@ export async function markUrgent(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const validation = await validateSignalAction(req.params.postId, 'urgent', userRef, req);
-  if ('error' in validation) {
+  const validation = await validateSignalAction(postId, 'urgent', userRef, req);
+  if (!validation.ok) {
     res.status(validation.error.code).json({ message: validation.error.message });
     return;
   }
@@ -260,6 +270,11 @@ export async function markUrgent(req: Request, res: Response): Promise<void> {
 }
 
 export async function markImportant(req: Request, res: Response): Promise<void> {
+  const postId = req.params.postId;
+  if (typeof postId !== 'string' || postId.trim().length === 0) {
+    res.status(400).json({ message: 'Invalid postId' });
+    return;
+  }
   const payload = postSignalSchema.parse(req.body);
   const userRef = await resolveUserRef(payload.userId);
   if (!userRef) {
@@ -267,8 +282,8 @@ export async function markImportant(req: Request, res: Response): Promise<void> 
     return;
   }
 
-  const validation = await validateSignalAction(req.params.postId, 'important', userRef, req);
-  if ('error' in validation) {
+  const validation = await validateSignalAction(postId, 'important', userRef, req);
+  if (!validation.ok) {
     res.status(validation.error.code).json({ message: validation.error.message });
     return;
   }
@@ -537,8 +552,10 @@ export async function getMobileRuntimeConfig(_req: Request, res: Response): Prom
 export async function createMobileTelemetry(req: Request, res: Response): Promise<void> {
   const payload = mobileTelemetrySchema.parse(req.body);
   const userRef = payload.userId ? await resolveUserRef(payload.userId) : null;
+  const telemetryId = new mongoose.Types.ObjectId();
 
-  const telemetry = await MobileTelemetryModel.create({
+  await enqueueMobileTelemetry({
+    _id: telemetryId,
     userId: userRef ?? undefined,
     sessionId: payload.sessionId,
     platform: payload.platform,
@@ -556,30 +573,27 @@ export async function createMobileTelemetry(req: Request, res: Response): Promis
       'loginMeta.isOnline': payload.eventType !== 'session_end',
     };
     if (payload.eventType === 'session_end' && payload.durationSec) {
-      const user = await UserModel.findById(userRef);
-      if (user) {
-        const currentMinutes = user.analyticsMeta?.timeSpentMinutes ?? 0;
-        user.analyticsMeta = {
-          ...user.analyticsMeta,
-          timeSpentMinutes: currentMinutes + payload.durationSec / 60,
-        };
-        user.loginMeta = {
-          ...user.loginMeta,
-          lastSeenAt: new Date(),
-          isOnline: false,
-        };
-        await user.save();
-      }
+      await UserModel.findByIdAndUpdate(userRef, {
+        $inc: { 'analyticsMeta.timeSpentMinutes': payload.durationSec / 60 },
+        $set: {
+          'loginMeta.lastSeenAt': new Date(),
+          'loginMeta.isOnline': false,
+        },
+      });
     } else {
       await UserModel.findByIdAndUpdate(userRef, { $set: update });
     }
   }
 
-  res.status(201).json({ message: 'Telemetry accepted', id: telemetry.id });
+  res.status(201).json({ message: 'Telemetry accepted', id: telemetryId.toString() });
 }
 
 export async function getPostSignals(req: Request, res: Response): Promise<void> {
   const postId = req.params.postId;
+  if (typeof postId !== 'string' || postId.trim().length === 0) {
+    res.status(400).json({ message: 'Invalid postId' });
+    return;
+  }
   if (!mongoose.isValidObjectId(postId)) {
     res.status(400).json({ message: 'Invalid postId' });
     return;

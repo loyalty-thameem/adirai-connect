@@ -40,4 +40,8 @@ const postSchema = new Schema(
   { timestamps: true },
 );
 
+postSchema.index({ moderationStatus: 1, createdAt: -1 });
+postSchema.index({ locationTag: 1, moderationStatus: 1, createdAt: -1 });
+postSchema.index({ userId: 1, createdAt: -1 });
+
 export const PostModel = model('Post', postSchema);

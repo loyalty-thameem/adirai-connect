@@ -5,7 +5,10 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
 import { errorHandler } from './common/middleware/errorHandler.js';
+import { idempotencyMiddleware } from './common/middleware/idempotency.js';
 import { notFound } from './common/middleware/notFound.js';
+import { requestContext } from './common/middleware/requestContext.js';
+import { requestMetrics } from './common/middleware/requestMetrics.js';
 import { createRateLimit } from './common/middleware/rateLimit.js';
 import { requestAudit } from './common/middleware/requestAudit.js';
 import { openApiSpec } from './docs/openapi.js';
@@ -25,6 +28,9 @@ app.use(
 );
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
+app.use(requestContext);
+app.use(idempotencyMiddleware);
+app.use(requestMetrics);
 app.use(requestAudit);
 
 app.use('/api/v1/health', healthRouter);

@@ -15,5 +15,8 @@ const auditLogSchema = new Schema(
   { timestamps: true },
 );
 
-export const AuditLogModel = model('AuditLog', auditLogSchema);
+auditLogSchema.index({ createdAt: -1 });
+auditLogSchema.index({ statusCode: 1, createdAt: -1 });
+auditLogSchema.index({ method: 1, createdAt: -1 });
 
+export const AuditLogModel = model('AuditLog', auditLogSchema);

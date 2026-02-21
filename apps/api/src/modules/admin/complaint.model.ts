@@ -35,5 +35,7 @@ const complaintSchema = new Schema(
   { timestamps: true },
 );
 
-export const ComplaintModel = model('Complaint', complaintSchema);
+complaintSchema.index({ status: 1, area: 1, createdAt: -1 });
+complaintSchema.index({ userId: 1, createdAt: -1 });
 
+export const ComplaintModel = model('Complaint', complaintSchema);

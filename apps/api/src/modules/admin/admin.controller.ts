@@ -166,6 +166,10 @@ export async function getUser(req: AuthenticatedRequest, res: Response): Promise
 
 export async function getUserInsights(req: AuthenticatedRequest, res: Response): Promise<void> {
   const userId = req.params.userId;
+  if (typeof userId !== 'string' || userId.trim().length === 0) {
+    res.status(400).json({ message: 'Invalid userId' });
+    return;
+  }
   const userObjectId = mongoose.isValidObjectId(userId) ? new mongoose.Types.ObjectId(userId) : null;
   const [user, postMix, postTotals, loginEvents, groupsCreated, groupsJoined, complaintCount] =
     await Promise.all([
@@ -290,12 +294,10 @@ export async function forceLogoutByAdmin(req: AuthenticatedRequest, res: Respons
     return;
   }
   await SessionModel.updateMany({ userId: user.id, revokedAt: { $exists: false } }, { revokedAt: new Date() });
-  user.loginMeta = {
-    ...user.loginMeta,
-    isOnline: false,
-    forceLogoutAt: new Date(),
-    lastSeenAt: new Date(),
-  };
+  user.set('loginMeta.isOnline', false);
+  user.set('loginMeta.forceLogoutAt', new Date());
+  user.set('loginMeta.lastSeenAt', new Date());
+  user.set('loginMeta.failedLoginCount', user.loginMeta?.failedLoginCount ?? 0);
   await user.save();
   res.json({ message: 'User force logged out', userId: user.id });
 }

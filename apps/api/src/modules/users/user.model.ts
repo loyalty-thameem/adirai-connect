@@ -76,4 +76,7 @@ const userSchema = new Schema(
   { timestamps: true },
 );
 
+userSchema.index({ status: 1, area: 1, createdAt: -1 });
+userSchema.index({ area: 1, 'analyticsMeta.engagementScore': -1, 'analyticsMeta.timeSpentMinutes': -1 });
+
 export const UserModel = model('User', userSchema);

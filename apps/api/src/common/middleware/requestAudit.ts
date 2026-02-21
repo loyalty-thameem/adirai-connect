@@ -1,6 +1,5 @@
-import crypto from 'crypto';
 import type { NextFunction, Request, Response } from 'express';
-import { AuditLogModel } from '../../modules/admin/audit-log.model.js';
+import { enqueueAuditLog } from '../background/write-queue.js';
 import { verifyAccessToken } from '../../modules/auth/auth.service.js';
 
 export function requestAudit(req: Request, res: Response, next: NextFunction): void {
@@ -11,15 +10,14 @@ export function requestAudit(req: Request, res: Response, next: NextFunction): v
   }
 
   const start = Date.now();
-  const requestId = req.header('x-request-id') ?? crypto.randomUUID();
-  res.setHeader('x-request-id', requestId);
+  const requestId = req.requestId ?? 'unknown';
 
   res.on('finish', () => {
     const authHeader = req.header('authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
     const payload = token ? verifyAccessToken(token) : null;
 
-    void AuditLogModel.create({
+    void enqueueAuditLog({
       actorUserId: payload?.sub ?? '',
       method,
       path: req.originalUrl,
@@ -38,4 +36,3 @@ export function requestAudit(req: Request, res: Response, next: NextFunction): v
 
   next();
 }
-

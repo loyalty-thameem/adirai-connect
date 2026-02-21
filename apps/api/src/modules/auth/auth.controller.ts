@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../../common/middleware/auth.js';
 import { hashPassword, verifyPassword } from '../../common/utils/password.js';
 import { UserModel } from '../users/user.model.js';
+import { enqueueLoginAudit } from '../../common/background/write-queue.js';
 import {
   forceLogoutSchema,
   forgotPasswordRequestSchema,
@@ -45,7 +46,7 @@ async function audit(
   req: AuthenticatedRequest,
   loginMethod?: 'otp' | 'password' | 'google' | 'microsoft',
 ): Promise<void> {
-  await LoginAuditModel.create({
+  await enqueueLoginAudit({
     userId,
     event,
     loginMethod,
@@ -211,13 +212,10 @@ export async function verifyOtpLogin(req: AuthenticatedRequest, res: Response): 
     req,
   );
 
-  user.loginMeta = {
-    ...user.loginMeta,
-    isOnline: true,
-    lastLoginAt: new Date(),
-    lastSeenAt: new Date(),
-    failedLoginCount: 0,
-  };
+  user.set('loginMeta.isOnline', true);
+  user.set('loginMeta.lastLoginAt', new Date());
+  user.set('loginMeta.lastSeenAt', new Date());
+  user.set('loginMeta.failedLoginCount', 0);
   await user.save();
   await audit(user.id, 'login_success', req, 'otp');
 
@@ -229,10 +227,8 @@ export async function loginWithPassword(req: AuthenticatedRequest, res: Response
   const user = await UserModel.findOne({ mobile: data.mobile });
   if (!user || !user.passwordHash || !verifyPassword(data.password, user.passwordHash)) {
     if (user) {
-      user.loginMeta = {
-        ...user.loginMeta,
-        failedLoginCount: (user.loginMeta?.failedLoginCount ?? 0) + 1,
-      };
+      const failedLoginCount = (user.loginMeta?.failedLoginCount ?? 0) + 1;
+      user.set('loginMeta.failedLoginCount', failedLoginCount);
       await user.save();
       await audit(user.id, 'login_failed', req, 'password');
     }
@@ -247,13 +243,10 @@ export async function loginWithPassword(req: AuthenticatedRequest, res: Response
     req,
   );
 
-  user.loginMeta = {
-    ...user.loginMeta,
-    isOnline: true,
-    lastLoginAt: new Date(),
-    lastSeenAt: new Date(),
-    failedLoginCount: 0,
-  };
+  user.set('loginMeta.isOnline', true);
+  user.set('loginMeta.lastLoginAt', new Date());
+  user.set('loginMeta.lastSeenAt', new Date());
+  user.set('loginMeta.failedLoginCount', 0);
   await user.save();
   await audit(user.id, 'login_success', req, 'password');
 
@@ -297,12 +290,10 @@ export async function oauthLogin(req: AuthenticatedRequest, res: Response): Prom
     method,
     req,
   );
-  user.loginMeta = {
-    ...user.loginMeta,
-    isOnline: true,
-    lastLoginAt: new Date(),
-    lastSeenAt: new Date(),
-  };
+  user.set('loginMeta.isOnline', true);
+  user.set('loginMeta.lastLoginAt', new Date());
+  user.set('loginMeta.lastSeenAt', new Date());
+  user.set('loginMeta.failedLoginCount', user.loginMeta?.failedLoginCount ?? 0);
   await user.save();
   await audit(user.id, 'login_success', req, method);
 
@@ -433,10 +424,7 @@ export async function resetPassword(req: AuthenticatedRequest, res: Response): P
     return;
   }
   user.passwordHash = hashPassword(data.newPassword);
-  user.loginMeta = {
-    ...user.loginMeta,
-    failedLoginCount: 0,
-  };
+  user.set('loginMeta.failedLoginCount', 0);
   await user.save();
   resetRequest.consumedAt = new Date();
   await resetRequest.save();
@@ -457,12 +445,10 @@ export async function forceLogoutUser(req: AuthenticatedRequest, res: Response):
     { userId: target.id, revokedAt: { $exists: false } },
     { revokedAt: new Date() },
   );
-  target.loginMeta = {
-    ...target.loginMeta,
-    isOnline: false,
-    forceLogoutAt: new Date(),
-    lastSeenAt: new Date(),
-  };
+  target.set('loginMeta.isOnline', false);
+  target.set('loginMeta.forceLogoutAt', new Date());
+  target.set('loginMeta.lastSeenAt', new Date());
+  target.set('loginMeta.failedLoginCount', target.loginMeta?.failedLoginCount ?? 0);
   await target.save();
   await audit(target.id, 'force_logout', req);
 
