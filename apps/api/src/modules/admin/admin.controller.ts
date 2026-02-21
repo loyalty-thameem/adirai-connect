@@ -10,6 +10,7 @@ import { GroupModel } from './group.model.js';
 import { AuditLogModel } from './audit-log.model.js';
 import { MessageCampaignModel } from './message-campaign.model.js';
 import { MobileConfigModel } from './mobile-config.model.js';
+import { MobileTelemetryModel } from '../community/mobile-telemetry.model.js';
 import { ModerationFlagModel } from './moderation-flag.model.js';
 import { ModerationSettingsModel } from './moderation-settings.model.js';
 import { PostModel } from './post.model.js';
@@ -35,6 +36,7 @@ function getAdminId(req: AuthenticatedRequest): string {
 }
 
 export async function dashboardAnalytics(_req: AuthenticatedRequest, res: Response): Promise<void> {
+  const since24h = new Date(Date.now() - 24 * 3600 * 1000);
   const [
     totalUsers,
     activeUsers,
@@ -43,14 +45,28 @@ export async function dashboardAnalytics(_req: AuthenticatedRequest, res: Respon
     complaintByArea,
     featureUsage,
     reportedPosts,
+    mobileActiveUsers,
+    mobileSessionAvg,
+    mobileTopScreens,
   ] = await Promise.all([
     UserModel.countDocuments({ status: { $ne: 'deleted' } }),
     SessionModel.distinct('userId', { revokedAt: { $exists: false } }),
-    UserModel.countDocuments({ 'loginMeta.lastSeenAt': { $gte: new Date(Date.now() - 24 * 3600 * 1000) } }),
+    UserModel.countDocuments({ 'loginMeta.lastSeenAt': { $gte: since24h } }),
     ComplaintModel.aggregate([{ $group: { _id: '$category', count: { $sum: 1 } } }]),
     ComplaintModel.aggregate([{ $group: { _id: '$area', count: { $sum: 1 } } }, { $sort: { count: -1 } }, { $limit: 5 }]),
     PostModel.aggregate([{ $group: { _id: '$category', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
     PostModel.countDocuments({ reportsCount: { $gt: 0 } }),
+    MobileTelemetryModel.distinct('userId', { createdAt: { $gte: since24h }, userId: { $exists: true } }),
+    MobileTelemetryModel.aggregate([
+      { $match: { createdAt: { $gte: since24h }, eventType: 'session_end', durationSec: { $gt: 0 } } },
+      { $group: { _id: null, avgSec: { $avg: '$durationSec' } } },
+    ]),
+    MobileTelemetryModel.aggregate([
+      { $match: { createdAt: { $gte: since24h }, eventType: 'screen_view', screen: { $exists: true, $ne: '' } } },
+      { $group: { _id: '$screen', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]),
   ]);
 
   const avgSessionMinutes = await UserModel.aggregate([
@@ -66,6 +82,11 @@ export async function dashboardAnalytics(_req: AuthenticatedRequest, res: Respon
     mostActiveArea: complaintByArea,
     mostUsedFeature: featureUsage,
     reportedPosts,
+    mobile: {
+      dailyActiveUsers: mobileActiveUsers.length,
+      avgSessionMinutes: Number((mobileSessionAvg[0]?.avgSec ?? 0) / 60),
+      topScreens: mobileTopScreens,
+    },
   });
 }
 

@@ -71,3 +71,15 @@ export const createGroupSchema = z.object({
   area: z.string().min(2).max(100),
   privacy: z.enum(['public', 'private', 'invite_only']).default('public'),
 });
+
+export const mobileTelemetrySchema = z.object({
+  userId: z.string().min(8).optional(),
+  sessionId: z.string().min(6).max(80),
+  platform: z.enum(['android', 'ios']),
+  appVersion: z.string().min(1).max(30),
+  eventType: z.enum(['session_start', 'session_end', 'screen_view', 'action']),
+  screen: z.string().max(80).optional(),
+  feature: z.string().max(80).optional(),
+  durationSec: z.number().int().min(0).max(86400).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});

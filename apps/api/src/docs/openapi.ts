@@ -202,6 +202,14 @@ export const openApiSpec = {
         },
       },
     },
+    '/community/mobile/telemetry': {
+      post: {
+        summary: 'Collect mobile telemetry event',
+        responses: {
+          '201': { description: 'Telemetry accepted' },
+        },
+      },
+    },
     '/community/posts': {
       post: {
         summary: 'Create community post',

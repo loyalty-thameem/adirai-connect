@@ -10,6 +10,7 @@ import { EventModel } from './event.model.js';
 import { getCachedFeed, invalidateFeedCache, setCachedFeed } from './feed-cache.js';
 import { calculatePostScore, urgentDeliveryPlan } from './feed-ranking.js';
 import { ListingModel } from './listing.model.js';
+import { MobileTelemetryModel } from './mobile-telemetry.model.js';
 import { PollModel } from './poll.model.js';
 import { PollVoteModel } from './poll-vote.model.js';
 import { PostSignalModel } from './post-signal.model.js';
@@ -20,6 +21,7 @@ import {
   createListingSchema,
   createPollSchema,
   createPostSchema,
+  mobileTelemetrySchema,
   postSignalSchema,
   postReactSchema,
   votePollSchema,
@@ -530,6 +532,50 @@ export async function getMobileRuntimeConfig(_req: Request, res: Response): Prom
     releaseChannel: config.releaseChannel,
     featureFlags: config.featureFlags,
   });
+}
+
+export async function createMobileTelemetry(req: Request, res: Response): Promise<void> {
+  const payload = mobileTelemetrySchema.parse(req.body);
+  const userRef = payload.userId ? await resolveUserRef(payload.userId) : null;
+
+  const telemetry = await MobileTelemetryModel.create({
+    userId: userRef ?? undefined,
+    sessionId: payload.sessionId,
+    platform: payload.platform,
+    appVersion: payload.appVersion,
+    eventType: payload.eventType,
+    screen: payload.screen,
+    feature: payload.feature,
+    durationSec: payload.durationSec ?? 0,
+    metadata: payload.metadata,
+  });
+
+  if (userRef) {
+    const update: Record<string, unknown> = {
+      'loginMeta.lastSeenAt': new Date(),
+      'loginMeta.isOnline': payload.eventType !== 'session_end',
+    };
+    if (payload.eventType === 'session_end' && payload.durationSec) {
+      const user = await UserModel.findById(userRef);
+      if (user) {
+        const currentMinutes = user.analyticsMeta?.timeSpentMinutes ?? 0;
+        user.analyticsMeta = {
+          ...user.analyticsMeta,
+          timeSpentMinutes: currentMinutes + payload.durationSec / 60,
+        };
+        user.loginMeta = {
+          ...user.loginMeta,
+          lastSeenAt: new Date(),
+          isOnline: false,
+        };
+        await user.save();
+      }
+    } else {
+      await UserModel.findByIdAndUpdate(userRef, { $set: update });
+    }
+  }
+
+  res.status(201).json({ message: 'Telemetry accepted', id: telemetry.id });
 }
 
 export async function getPostSignals(req: Request, res: Response): Promise<void> {

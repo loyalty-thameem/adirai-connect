@@ -9,6 +9,7 @@ import { SecurityEventModel } from '../src/modules/admin/security-event.model.js
 import { ContactModel } from '../src/modules/community/contact.model.js';
 import { EventModel } from '../src/modules/community/event.model.js';
 import { ListingModel } from '../src/modules/community/listing.model.js';
+import { MobileTelemetryModel } from '../src/modules/community/mobile-telemetry.model.js';
 import { PostSignalModel } from '../src/modules/community/post-signal.model.js';
 import { PollModel } from '../src/modules/community/poll.model.js';
 import { UserModel } from '../src/modules/users/user.model.js';
@@ -27,6 +28,7 @@ async function seed(): Promise<void> {
   await ContactModel.deleteMany({});
   await PollModel.deleteMany({});
   await PostSignalModel.deleteMany({});
+  await MobileTelemetryModel.deleteMany({});
 
   const users = await UserModel.insertMany([
     {
@@ -186,6 +188,34 @@ async function seed(): Promise<void> {
       area: 'Adirai East',
       accepted: false,
       rejectedReason: 'self_vote_disallowed',
+    },
+  ]);
+
+  await MobileTelemetryModel.insertMany([
+    {
+      userId: demoUser._id,
+      sessionId: 'seed-mob-1',
+      platform: 'android',
+      appVersion: '1.0.0',
+      eventType: 'session_start',
+      screen: 'auth',
+    },
+    {
+      userId: demoUser._id,
+      sessionId: 'seed-mob-1',
+      platform: 'android',
+      appVersion: '1.0.0',
+      eventType: 'screen_view',
+      screen: 'feed',
+    },
+    {
+      userId: demoUser._id,
+      sessionId: 'seed-mob-1',
+      platform: 'android',
+      appVersion: '1.0.0',
+      eventType: 'session_end',
+      screen: 'settings',
+      durationSec: 720,
     },
   ]);
 

@@ -12,6 +12,11 @@ All endpoints require:
 - `GET /dashboard/security`
 - `GET /security/audit-logs?method=POST&statusCode=429`
 
+`/dashboard/analytics` now includes mobile metrics:
+- `mobile.dailyActiveUsers`
+- `mobile.avgSessionMinutes`
+- `mobile.topScreens`
+
 ## User Control
 
 - `GET /users?q=&role=&status=&area=&page=1&pageSize=20`

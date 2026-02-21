@@ -6,6 +6,7 @@ Base URL: `http://localhost:4000/api/v1/community`
 
 - `GET /feed?area=Adirai%20East`
 - `GET /mobile-config` (public runtime config for mobile app)
+- `POST /mobile/telemetry` (mobile session/screen/action analytics)
 - `POST /posts`
 - `POST /posts/:postId/react` with body `{ "userId": "...", "action": "like|comment|report" }`
 - `POST /posts/:postId/urgent` with body `{ "userId": "..." }`
@@ -46,6 +47,20 @@ Base URL: `http://localhost:4000/api/v1/community`
 ## Suggestions
 
 - `GET /suggestions?area=Adirai%20East`
+
+## Mobile Telemetry Payload Example
+
+```json
+{
+  "userId": "9000000002",
+  "sessionId": "mob-1730000000-1102",
+  "platform": "android",
+  "appVersion": "1.0.0",
+  "eventType": "screen_view",
+  "screen": "feed",
+  "feature": "open_tab"
+}
+```
 
 ## Anti-Manipulation Rules (Step 5)
 
