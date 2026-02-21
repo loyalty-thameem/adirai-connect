@@ -12,11 +12,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
     "dev:api": "pnpm --filter @adirai/api dev",
     "dev:web": "pnpm --filter @adirai/web dev",
-    "dev:admin": "pnpm --filter @adirai/admin dev"
+    "dev:admin": "pnpm --filter @adirai/admin dev",
+    "dev:mobile": "pnpm --filter @adirai/mobile dev"
   },
   "devDependencies": {
     "prettier": "^3.5.0",
     "typescript": "^5.8.0"
   }
 }
-

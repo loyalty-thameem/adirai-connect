@@ -72,3 +72,20 @@ export type Group = {
   isFrozen: boolean;
 };
 
+export type MobileConfig = {
+  _id?: string;
+  minAndroidVersion: string;
+  minIosVersion: string;
+  maintenanceMode: boolean;
+  maintenanceMessage?: string;
+  forceUpdate: boolean;
+  pushEnabled: boolean;
+  apiTimeoutMs: number;
+  releaseChannel: string;
+  featureFlags?: {
+    chatEnabled?: boolean;
+    marketplaceEnabled?: boolean;
+    pollsEnabled?: boolean;
+    groupsEnabled?: boolean;
+  };
+};

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { ComplaintModel } from '../admin/complaint.model.js';
 import { GroupModel } from '../admin/group.model.js';
+import { MobileConfigModel } from '../admin/mobile-config.model.js';
 import { PostModel } from '../admin/post.model.js';
 import { UserModel } from '../users/user.model.js';
 import { ContactModel } from './contact.model.js';
@@ -511,6 +512,24 @@ export async function seedContacts(req: Request, res: Response): Promise<void> {
     { type: 'blood_donor', name: 'Adirai Blood Network', phone: '9123456789', area, available24x7: true },
   ]);
   res.json({ message: 'Contacts seeded', area });
+}
+
+export async function getMobileRuntimeConfig(_req: Request, res: Response): Promise<void> {
+  let config = await MobileConfigModel.findOne({ singleton: 'default' }).lean();
+  if (!config) {
+    config = await MobileConfigModel.create({ singleton: 'default' });
+  }
+  res.json({
+    minAndroidVersion: config.minAndroidVersion,
+    minIosVersion: config.minIosVersion,
+    maintenanceMode: config.maintenanceMode,
+    maintenanceMessage: config.maintenanceMessage,
+    forceUpdate: config.forceUpdate,
+    pushEnabled: config.pushEnabled,
+    apiTimeoutMs: config.apiTimeoutMs,
+    releaseChannel: config.releaseChannel,
+    featureFlags: config.featureFlags,
+  });
 }
 
 export async function getPostSignals(req: Request, res: Response): Promise<void> {

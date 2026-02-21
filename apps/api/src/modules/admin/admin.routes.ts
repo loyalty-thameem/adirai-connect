@@ -6,6 +6,7 @@ import {
   dashboardAnalytics,
   dashboardSecurity,
   forceLogoutByAdmin,
+  getMobileConfig,
   getModerationSettings,
   getUser,
   getUserInsights,
@@ -26,6 +27,7 @@ import {
   updateComplaint,
   updateGroupState,
   updateModerationSettings,
+  updateMobileConfig,
   updateUserStatus,
   updateUserVerification,
 } from './admin.controller.js';
@@ -67,3 +69,6 @@ adminRouter.get('/messaging/campaigns', listCampaigns);
 adminRouter.get('/groups', listGroups);
 adminRouter.patch('/groups/:groupId/state', updateGroupState);
 adminRouter.delete('/groups/:groupId', removeGroup);
+
+adminRouter.get('/mobile/config', getMobileConfig);
+adminRouter.patch('/mobile/config', requireRoles(['super_admin', 'admin']), updateMobileConfig);

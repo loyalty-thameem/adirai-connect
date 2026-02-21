@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Adirai Connect",
+    "slug": "adirai-connect-mobile",
+    "scheme": "adirai-connect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ecfeff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "com.adiraiconnect.mobile",
+      "versionCode": 1
+    },
+    "ios": {
+      "bundleIdentifier": "com.adiraiconnect.mobile"
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:4000/api/v1"
+    }
+  }
+}
+

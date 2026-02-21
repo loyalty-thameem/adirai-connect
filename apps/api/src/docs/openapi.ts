@@ -134,6 +134,20 @@ export const openApiSpec = {
         },
       },
     },
+    '/admin/mobile/config': {
+      get: {
+        summary: 'Get mobile runtime config',
+        responses: {
+          '200': { description: 'Mobile config' },
+        },
+      },
+      patch: {
+        summary: 'Update mobile runtime config',
+        responses: {
+          '200': { description: 'Mobile config updated' },
+        },
+      },
+    },
     '/admin/users': {
       get: {
         summary: 'List users with filters',
@@ -177,6 +191,14 @@ export const openApiSpec = {
         summary: 'Community feed with ranking score',
         responses: {
           '200': { description: 'Feed items' },
+        },
+      },
+    },
+    '/community/mobile-config': {
+      get: {
+        summary: 'Public mobile config endpoint for app bootstrap',
+        responses: {
+          '200': { description: 'Mobile runtime config' },
         },
       },
     },

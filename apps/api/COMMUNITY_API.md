@@ -5,6 +5,7 @@ Base URL: `http://localhost:4000/api/v1/community`
 ## Feed + Posts
 
 - `GET /feed?area=Adirai%20East`
+- `GET /mobile-config` (public runtime config for mobile app)
 - `POST /posts`
 - `POST /posts/:postId/react` with body `{ "userId": "...", "action": "like|comment|report" }`
 - `POST /posts/:postId/urgent` with body `{ "userId": "..." }`

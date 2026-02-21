@@ -93,3 +93,26 @@ Broadcast example:
 - `GET /groups`
 - `PATCH /groups/:groupId/state`
 - `DELETE /groups/:groupId`
+
+## Mobile Config
+
+- `GET /mobile/config`
+- `PATCH /mobile/config` (admin/super_admin)
+
+```json
+{
+  "minAndroidVersion": "1.0.2",
+  "minIosVersion": "1.0.1",
+  "maintenanceMode": false,
+  "forceUpdate": false,
+  "pushEnabled": true,
+  "apiTimeoutMs": 12000,
+  "releaseChannel": "production",
+  "featureFlags": {
+    "chatEnabled": true,
+    "marketplaceEnabled": false,
+    "pollsEnabled": true,
+    "groupsEnabled": true
+  }
+}
+```

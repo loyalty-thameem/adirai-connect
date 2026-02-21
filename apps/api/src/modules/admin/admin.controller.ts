@@ -9,6 +9,7 @@ import { ComplaintModel } from './complaint.model.js';
 import { GroupModel } from './group.model.js';
 import { AuditLogModel } from './audit-log.model.js';
 import { MessageCampaignModel } from './message-campaign.model.js';
+import { MobileConfigModel } from './mobile-config.model.js';
 import { ModerationFlagModel } from './moderation-flag.model.js';
 import { ModerationSettingsModel } from './moderation-settings.model.js';
 import { PostModel } from './post.model.js';
@@ -21,6 +22,7 @@ import {
   moderationFlagSchema,
   moderationResolveSchema,
   moderationSettingsSchema,
+  mobileConfigSchema,
   personalMessageSchema,
   userStatusSchema,
   userVerifySchema,
@@ -456,4 +458,22 @@ export async function removeGroup(req: AuthenticatedRequest, res: Response): Pro
     return;
   }
   res.json({ message: 'Group removed' });
+}
+
+export async function getMobileConfig(_req: AuthenticatedRequest, res: Response): Promise<void> {
+  let config = await MobileConfigModel.findOne({ singleton: 'default' }).lean();
+  if (!config) {
+    config = await MobileConfigModel.create({ singleton: 'default' });
+  }
+  res.json(config);
+}
+
+export async function updateMobileConfig(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const payload = mobileConfigSchema.parse(req.body);
+  const config = await MobileConfigModel.findOneAndUpdate(
+    { singleton: 'default' },
+    { $set: payload, $setOnInsert: { singleton: 'default' } },
+    { upsert: true, new: true },
+  ).lean();
+  res.json(config);
 }

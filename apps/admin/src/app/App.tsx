@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import { ComplaintsPanel } from '../features/users/ComplaintsPanel';
 import { DashboardPanel } from '../features/users/DashboardPanel';
 import { GroupsPanel } from '../features/users/GroupsPanel';
+import { MobileConfigPanel } from '../features/users/MobileConfigPanel';
 import { MessagingPanel } from '../features/users/MessagingPanel';
 import { ModerationPanel } from '../features/users/ModerationPanel';
 import { UsersPanel } from '../features/users/UsersPanel';
 
-type TabKey = 'dashboard' | 'users' | 'complaints' | 'moderation' | 'messaging' | 'groups';
+type TabKey = 'dashboard' | 'users' | 'complaints' | 'moderation' | 'messaging' | 'groups' | 'mobile';
 
 const tabs: Array<{ key: TabKey; label: string }> = [
   { key: 'dashboard', label: 'Dashboard' },
@@ -15,6 +16,7 @@ const tabs: Array<{ key: TabKey; label: string }> = [
   { key: 'moderation', label: 'Moderation' },
   { key: 'messaging', label: 'Messaging' },
   { key: 'groups', label: 'Groups' },
+  { key: 'mobile', label: 'Mobile Config' },
 ];
 
 export function App() {
@@ -26,6 +28,7 @@ export function App() {
     if (tab === 'moderation') return <ModerationPanel />;
     if (tab === 'messaging') return <MessagingPanel />;
     if (tab === 'groups') return <GroupsPanel />;
+    if (tab === 'mobile') return <MobileConfigPanel />;
     return <DashboardPanel />;
   }, [tab]);
 

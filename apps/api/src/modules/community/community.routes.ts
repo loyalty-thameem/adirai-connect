@@ -7,6 +7,7 @@ import {
   createPoll,
   createPost,
   getFeed,
+  getMobileRuntimeConfig,
   getSuggestions,
   listContacts,
   listEvents,
@@ -25,6 +26,7 @@ import {
 export const communityRouter = Router();
 
 communityRouter.get('/feed', getFeed);
+communityRouter.get('/mobile-config', getMobileRuntimeConfig);
 communityRouter.post('/posts', createPost);
 communityRouter.post('/posts/:postId/react', reactPost);
 communityRouter.post('/posts/:postId/urgent', markUrgent);

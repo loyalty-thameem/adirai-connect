@@ -1,4 +1,4 @@
-import type { AdminUser, Campaign, Complaint, Group, ModerationFlag } from './types';
+import type { AdminUser, Campaign, Complaint, Group, MobileConfig, ModerationFlag } from './types';
 
 const BASE_URL = import.meta.env.VITE_ADMIN_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
@@ -59,5 +59,7 @@ export const adminApi = {
     request<Group>(`/admin/groups/${groupId}/state`, { method: 'PATCH', body: JSON.stringify(payload) }),
   removeGroup: (groupId: string) =>
     request<{ message: string }>(`/admin/groups/${groupId}`, { method: 'DELETE' }),
+  getMobileConfig: () => request<MobileConfig>('/admin/mobile/config'),
+  updateMobileConfig: (payload: Partial<MobileConfig>) =>
+    request<MobileConfig>('/admin/mobile/config', { method: 'PATCH', body: JSON.stringify(payload) }),
 };
-

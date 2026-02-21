@@ -76,3 +76,21 @@ export const broadcastMessageSchema = messageSchema.extend({
   verifiedOnly: z.boolean().default(false),
 });
 
+export const mobileConfigSchema = z.object({
+  minAndroidVersion: z.string().min(1).optional(),
+  minIosVersion: z.string().min(1).optional(),
+  maintenanceMode: z.boolean().optional(),
+  maintenanceMessage: z.string().max(300).optional(),
+  forceUpdate: z.boolean().optional(),
+  pushEnabled: z.boolean().optional(),
+  apiTimeoutMs: z.number().int().min(1000).max(60000).optional(),
+  releaseChannel: z.string().max(40).optional(),
+  featureFlags: z
+    .object({
+      chatEnabled: z.boolean().optional(),
+      marketplaceEnabled: z.boolean().optional(),
+      pollsEnabled: z.boolean().optional(),
+      groupsEnabled: z.boolean().optional(),
+    })
+    .optional(),
+});
