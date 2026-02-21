@@ -21,6 +21,13 @@ const userSchema = new Schema(
     },
     verifiedBadge: { type: Boolean, default: false },
     aadhaarVerified: { type: Boolean, default: false },
+    shadowBanned: { type: Boolean, default: false },
+    suspendedUntil: { type: Date },
+    profileType: {
+      type: String,
+      enum: ['general', 'business', 'volunteer', 'government'],
+      default: 'general',
+    },
     area: { type: String, required: true },
     ward: { type: String },
     language: { type: String, default: 'ta' },
@@ -37,6 +44,17 @@ const userSchema = new Schema(
       engagementScore: { type: Number, default: 0 },
       urgentPostsCount: { type: Number, default: 0 },
       importantPostsCount: { type: Number, default: 0 },
+      complaintCount: { type: Number, default: 0 },
+      reportCount: { type: Number, default: 0 },
+      timeSpentMinutes: { type: Number, default: 0 },
+      activeHours: [{ type: Number }],
+      sentimentScore: { type: Number, default: 0 },
+      postCategoryAffinity: {
+        complaint: { type: Number, default: 0 },
+        business: { type: Number, default: 0 },
+        help: { type: Number, default: 0 },
+        general: { type: Number, default: 0 },
+      },
     },
     oauth: {
       google: {
@@ -53,4 +71,3 @@ const userSchema = new Schema(
 );
 
 export const UserModel = model('User', userSchema);
-

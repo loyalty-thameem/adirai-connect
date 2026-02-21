@@ -102,5 +102,59 @@ export const openApiSpec = {
         },
       },
     },
+    '/admin/dashboard/analytics': {
+      get: {
+        summary: 'Admin analytics dashboard',
+        responses: {
+          '200': { description: 'Analytics payload' },
+        },
+      },
+    },
+    '/admin/dashboard/security': {
+      get: {
+        summary: 'Admin security dashboard',
+        responses: {
+          '200': { description: 'Security payload' },
+        },
+      },
+    },
+    '/admin/users': {
+      get: {
+        summary: 'List users with filters',
+        responses: {
+          '200': { description: 'Users list' },
+        },
+      },
+    },
+    '/admin/complaints': {
+      get: {
+        summary: 'List complaints',
+        responses: {
+          '200': { description: 'Complaints list' },
+        },
+      },
+    },
+    '/admin/moderation/flags': {
+      get: {
+        summary: 'List moderation flags',
+        responses: {
+          '200': { description: 'Flag list' },
+        },
+      },
+      post: {
+        summary: 'Create moderation flag',
+        responses: {
+          '201': { description: 'Flag created' },
+        },
+      },
+    },
+    '/admin/messaging/broadcast': {
+      post: {
+        summary: 'Send broadcast campaign',
+        responses: {
+          '201': { description: 'Campaign created' },
+        },
+      },
+    },
   },
 };
