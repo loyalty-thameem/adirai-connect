@@ -22,6 +22,85 @@ export const openApiSpec = {
         },
       },
     },
+    '/auth/otp/request': {
+      post: {
+        summary: 'Request OTP for register/login/password_reset',
+        responses: {
+          '200': { description: 'OTP issued' },
+        },
+      },
+    },
+    '/auth/otp/verify': {
+      post: {
+        summary: 'Verify OTP (login or password reset pre-check)',
+        responses: {
+          '200': { description: 'Verified' },
+        },
+      },
+    },
+    '/auth/password/forgot': {
+      post: {
+        summary: 'Request password reset OTP',
+        responses: {
+          '200': { description: 'OTP issued for password reset' },
+        },
+      },
+    },
+    '/auth/login/password': {
+      post: {
+        summary: 'Password login',
+        responses: {
+          '200': { description: 'Logged in' },
+        },
+      },
+    },
+    '/auth/login/oauth': {
+      post: {
+        summary: 'OAuth login bridge for Google/Microsoft',
+        responses: {
+          '200': { description: 'Logged in' },
+        },
+      },
+    },
+    '/auth/token/refresh': {
+      post: {
+        summary: 'Refresh access token with refresh token rotation',
+        responses: {
+          '200': { description: 'Tokens rotated' },
+        },
+      },
+    },
+    '/auth/logout': {
+      post: {
+        summary: 'Logout current session',
+        responses: {
+          '200': { description: 'Logged out' },
+        },
+      },
+    },
+    '/auth/password/reset': {
+      post: {
+        summary: 'Reset password with reset token',
+        responses: {
+          '200': { description: 'Password reset' },
+        },
+      },
+    },
+    '/auth/sessions/me': {
+      get: {
+        summary: 'Get my login/session history',
+        responses: {
+          '200': { description: 'History list' },
+        },
+      },
+    },
+    '/auth/sessions/force-logout': {
+      post: {
+        summary: 'Admin force logout all user sessions',
+        responses: {
+          '200': { description: 'User sessions revoked' },
+        },
+      },
+    },
   },
 };
-

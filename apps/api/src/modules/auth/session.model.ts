@@ -12,6 +12,7 @@ const sessionSchema = new Schema(
     os: { type: String },
     appVersion: { type: String },
     loginMethod: { type: String, enum: ['otp', 'password', 'google', 'microsoft'] },
+    lastActiveAt: { type: Date },
     revokedAt: { type: Date },
     expiresAt: { type: Date, required: true },
   },
@@ -19,4 +20,3 @@ const sessionSchema = new Schema(
 );
 
 export const SessionModel = model('Session', sessionSchema);
-
