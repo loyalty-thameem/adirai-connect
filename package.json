@@ -1,0 +1,22 @@
+{
+  "name": "adirai-connect",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Adirai Connect monorepo",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "dev:api": "pnpm --filter @adirai/api dev",
+    "dev:web": "pnpm --filter @adirai/web dev",
+    "dev:admin": "pnpm --filter @adirai/admin dev"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.0"
+  }
+}
+
