@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: adirai-config
+  namespace: adirai-connect
+data:
+  NODE_ENV: "production"
+  API_PORT: "4000"
+  ACCESS_TOKEN_TTL: "15m"
+  REFRESH_TOKEN_TTL: "30d"
+  CORS_ORIGIN_WEB: "https://web.adiraiconnect.example"
+  CORS_ORIGIN_ADMIN: "https://admin.adiraiconnect.example"
+  SWAGGER_ENABLED: "false"
+

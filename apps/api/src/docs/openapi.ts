@@ -14,6 +14,31 @@ export const openApiSpec = {
         },
       },
     },
+    '/health/live': {
+      get: {
+        summary: 'Liveness probe endpoint',
+        responses: {
+          '200': { description: 'Live' },
+        },
+      },
+    },
+    '/health/ready': {
+      get: {
+        summary: 'Readiness probe endpoint',
+        responses: {
+          '200': { description: 'Ready' },
+          '503': { description: 'Not ready' },
+        },
+      },
+    },
+    '/health/metrics': {
+      get: {
+        summary: 'Runtime metrics endpoint',
+        responses: {
+          '200': { description: 'Metrics payload' },
+        },
+      },
+    },
     '/auth/register': {
       post: {
         summary: 'Register user',
