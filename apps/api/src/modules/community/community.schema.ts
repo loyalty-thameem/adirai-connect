@@ -13,6 +13,11 @@ export const createPostSchema = z.object({
 
 export const postReactSchema = z.object({
   action: z.enum(['like', 'comment', 'report']),
+  userId: z.string().min(8),
+});
+
+export const postSignalSchema = z.object({
+  userId: z.string().min(8),
 });
 
 export const createComplaintSchema = z.object({
@@ -66,4 +71,3 @@ export const createGroupSchema = z.object({
   area: z.string().min(2).max(100),
   privacy: z.enum(['public', 'private', 'invite_only']).default('public'),
 });
-

@@ -22,12 +22,21 @@ export const webApi = {
     request<{ items: FeedPost[] }>(`/community/feed${area ? `?area=${encodeURIComponent(area)}` : ''}`),
   createPost: (payload: Record<string, unknown>) =>
     request<FeedPost>('/community/posts', { method: 'POST', body: JSON.stringify(payload) }),
-  reactPost: (postId: string, action: 'like' | 'comment' | 'report') =>
-    request<FeedPost>(`/community/posts/${postId}/react`, { method: 'POST', body: JSON.stringify({ action }) }),
-  urgentPost: (postId: string) =>
-    request<Record<string, unknown>>(`/community/posts/${postId}/urgent`, { method: 'POST' }),
-  importantPost: (postId: string) =>
-    request<Record<string, unknown>>(`/community/posts/${postId}/important`, { method: 'POST' }),
+  reactPost: (postId: string, userId: string, action: 'like' | 'comment' | 'report') =>
+    request<FeedPost>(`/community/posts/${postId}/react`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, action }),
+    }),
+  urgentPost: (postId: string, userId: string) =>
+    request<Record<string, unknown>>(`/community/posts/${postId}/urgent`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
+  importantPost: (postId: string, userId: string) =>
+    request<Record<string, unknown>>(`/community/posts/${postId}/important`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
 
   createComplaint: (payload: Record<string, unknown>) =>
     request<Complaint>('/community/complaints', { method: 'POST', body: JSON.stringify(payload) }),
@@ -58,4 +67,3 @@ export const webApi = {
   getSuggestions: (area: string) =>
     request<Suggestions>(`/community/suggestions?area=${encodeURIComponent(area)}`),
 };
-

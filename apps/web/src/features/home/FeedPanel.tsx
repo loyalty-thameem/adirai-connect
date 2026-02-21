@@ -14,6 +14,7 @@ const postSchema = z.object({
 type PostForm = z.infer<typeof postSchema>;
 
 export function FeedPanel() {
+  const actorUserId = '9000000002';
   const [items, setItems] = useState<FeedPost[]>([]);
   const [status, setStatus] = useState('');
   const { register, handleSubmit, reset } = useForm<PostForm>({
@@ -43,18 +44,18 @@ export function FeedPanel() {
   };
 
   const doAction = async (postId: string, action: 'like' | 'comment' | 'report') => {
-    await webApi.reactPost(postId, action);
+    await webApi.reactPost(postId, actorUserId, action);
     await load();
   };
 
   const doUrgent = async (postId: string) => {
-    const response = await webApi.urgentPost(postId);
+    const response = await webApi.urgentPost(postId, actorUserId);
     setStatus(`Urgent applied: suggestedTo ${String(response.suggestedTo ?? 0)}`);
     await load();
   };
 
   const doImportant = async (postId: string) => {
-    const response = await webApi.importantPost(postId);
+    const response = await webApi.importantPost(postId, actorUserId);
     setStatus(`Important applied: votes ${String(response.importantVotes ?? 0)}`);
     await load();
   };
@@ -111,4 +112,3 @@ export function FeedPanel() {
     </section>
   );
 }
-

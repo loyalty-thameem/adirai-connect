@@ -9,6 +9,7 @@ import { EventModel } from './event.model.js';
 import { ListingModel } from './listing.model.js';
 import { PollModel } from './poll.model.js';
 import { PollVoteModel } from './poll-vote.model.js';
+import { PostSignalModel } from './post-signal.model.js';
 import {
   createComplaintSchema,
   createEventSchema,
@@ -16,6 +17,7 @@ import {
   createListingSchema,
   createPollSchema,
   createPostSchema,
+  postSignalSchema,
   postReactSchema,
   votePollSchema,
 } from './community.schema.js';
@@ -51,10 +53,17 @@ export async function getFeed(req: Request, res: Response): Promise<void> {
         post.commentsCount * 3 +
         post.importantVotes * 5 +
         post.urgentVotes * 10 +
-        recencyWeight(post.createdAt);
-      return { ...post, score };
+        recencyWeight(post.createdAt) -
+        Math.min(50, (post.suspiciousSignalsCount ?? 0) * 5);
+      const pinned = Boolean(post.importantPinnedUntil && post.importantPinnedUntil > new Date());
+      const topPlacement = Boolean(post.topPlacementUntil && post.topPlacementUntil > new Date());
+      return { ...post, score, pinned, topPlacement };
     })
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      if (a.topPlacement !== b.topPlacement) return Number(b.topPlacement) - Number(a.topPlacement);
+      if (a.pinned !== b.pinned) return Number(b.pinned) - Number(a.pinned);
+      return b.score - a.score;
+    });
 
   res.json({ items: scored });
 }
@@ -72,11 +81,26 @@ export async function createPost(req: Request, res: Response): Promise<void> {
 
 export async function reactPost(req: Request, res: Response): Promise<void> {
   const payload = postReactSchema.parse(req.body);
+  const userRef = await resolveUserRef(payload.userId);
+  if (!userRef) {
+    res.status(400).json({ message: 'Invalid userId/mobile' });
+    return;
+  }
   const post = await PostModel.findById(req.params.postId);
   if (!post) {
     res.status(404).json({ message: 'Post not found' });
     return;
   }
+
+  await PostSignalModel.create({
+    postId: post.id,
+    userId: userRef,
+    signalType: payload.action,
+    ipAddress: req.ip,
+    deviceId: req.header('x-device-id') ?? '',
+    area: req.header('x-area') ?? post.locationTag ?? '',
+    accepted: true,
+  });
 
   if (payload.action === 'like') post.likesCount += 1;
   if (payload.action === 'comment') post.commentsCount += 1;
@@ -86,41 +110,214 @@ export async function reactPost(req: Request, res: Response): Promise<void> {
   res.json(post);
 }
 
-export async function markUrgent(req: Request, res: Response): Promise<void> {
-  const post = await PostModel.findById(req.params.postId);
+async function validateSignalAction(
+  postId: string,
+  signalType: 'urgent' | 'important',
+  userRef: string,
+  req: Request,
+) {
+  const post = await PostModel.findById(postId);
   if (!post) {
-    res.status(404).json({ message: 'Post not found' });
+    return { error: { code: 404, message: 'Post not found' } } as const;
+  }
+
+  if (String(post.userId) === String(userRef)) {
+    await PostSignalModel.create({
+      postId,
+      userId: userRef,
+      signalType,
+      ipAddress: req.ip,
+      deviceId: req.header('x-device-id') ?? '',
+      area: req.header('x-area') ?? '',
+      accepted: false,
+      rejectedReason: 'self_vote_disallowed',
+    });
+    return { error: { code: 400, message: 'Cannot vote on your own post' } } as const;
+  }
+
+  const existingAccepted = await PostSignalModel.findOne({
+    postId,
+    userId: userRef,
+    signalType,
+    accepted: true,
+  }).lean();
+  if (existingAccepted) {
+    await PostSignalModel.create({
+      postId,
+      userId: userRef,
+      signalType,
+      ipAddress: req.ip,
+      deviceId: req.header('x-device-id') ?? '',
+      area: req.header('x-area') ?? '',
+      accepted: false,
+      rejectedReason: 'duplicate_vote',
+    });
+    return { error: { code: 409, message: `Already marked ${signalType}` } } as const;
+  }
+
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const userWindowCount = await PostSignalModel.countDocuments({
+    userId: userRef,
+    signalType,
+    createdAt: { $gte: oneHourAgo },
+    accepted: true,
+  });
+  if (userWindowCount >= 20) {
+    await PostSignalModel.create({
+      postId,
+      userId: userRef,
+      signalType,
+      ipAddress: req.ip,
+      deviceId: req.header('x-device-id') ?? '',
+      area: req.header('x-area') ?? '',
+      accepted: false,
+      rejectedReason: 'user_rate_limit_exceeded',
+    });
+    return { error: { code: 429, message: 'Too many actions, retry later' } } as const;
+  }
+
+  const ipOrDeviceCount = await PostSignalModel.countDocuments({
+    signalType,
+    createdAt: { $gte: oneHourAgo },
+    accepted: true,
+    $or: [{ ipAddress: req.ip }, { deviceId: req.header('x-device-id') ?? '' }],
+  });
+  if (ipOrDeviceCount >= 60) {
+    await PostSignalModel.create({
+      postId,
+      userId: userRef,
+      signalType,
+      ipAddress: req.ip,
+      deviceId: req.header('x-device-id') ?? '',
+      area: req.header('x-area') ?? '',
+      accepted: false,
+      rejectedReason: 'device_or_ip_rate_limit_exceeded',
+    });
+    return { error: { code: 429, message: 'Suspicious traffic detected' } } as const;
+  }
+
+  return { post } as const;
+}
+
+function urgentDeliveryPlan(urgentVotes: number, area: string) {
+  if (urgentVotes >= 10) {
+    return {
+      tier: 'global',
+      reach: 300,
+      stages: [
+        { stage: 'same_area', users: 120, area },
+        { stage: 'nearby_wards', users: 120 },
+        { stage: 'wider_adirai', users: 60 },
+      ],
+    };
+  }
+  if (urgentVotes >= 1) {
+    return {
+      tier: 'local',
+      reach: 30,
+      stages: [{ stage: 'same_area', users: 30, area }],
+    };
+  }
+  return { tier: 'none', reach: 0, stages: [] as Array<Record<string, unknown>> };
+}
+
+export async function markUrgent(req: Request, res: Response): Promise<void> {
+  const payload = postSignalSchema.parse(req.body);
+  const userRef = await resolveUserRef(payload.userId);
+  if (!userRef) {
+    res.status(400).json({ message: 'Invalid userId/mobile' });
     return;
   }
-  post.urgentVotes += 1;
-  await post.save();
 
-  let suggestedTo = 0;
-  if (post.urgentVotes === 1) suggestedTo = 30;
-  if (post.urgentVotes === 10) suggestedTo = 300;
+  const validation = await validateSignalAction(req.params.postId, 'urgent', userRef, req);
+  if ('error' in validation) {
+    res.status(validation.error.code).json({ message: validation.error.message });
+    return;
+  }
+  const post = validation.post;
+
+  const samePostSignalFromIp = await PostSignalModel.countDocuments({
+    postId: post.id,
+    signalType: 'urgent',
+    accepted: true,
+    ipAddress: req.ip,
+  });
+  if (samePostSignalFromIp >= 3) {
+    post.suspiciousSignalsCount += 1;
+  }
+
+  await PostSignalModel.create({
+    postId: post.id,
+    userId: userRef,
+    signalType: 'urgent',
+    ipAddress: req.ip,
+    deviceId: req.header('x-device-id') ?? '',
+    area: req.header('x-area') ?? post.locationTag ?? '',
+    accepted: true,
+  });
+  post.urgentVotes += 1;
+  const deliveryPlan = urgentDeliveryPlan(post.urgentVotes, post.locationTag ?? 'Adirai');
+  post.urgentBoostTier = deliveryPlan.tier as 'none' | 'local' | 'nearby' | 'global';
+  post.urgentBoostReach = deliveryPlan.reach;
+  post.urgentBoostUpdatedAt = new Date();
+  await post.save();
 
   res.json({
     postId: post.id,
     urgentVotes: post.urgentVotes,
-    suggestedTo,
-    scope: suggestedTo ? 'area_then_nearby' : 'none',
+    suggestedTo: deliveryPlan.reach,
+    scope: deliveryPlan.tier,
+    deliveryPlan,
+    antiManipulation: {
+      uniquePerUserEnforced: true,
+      userRateLimitPerHour: 20,
+      ipDeviceRateLimitPerHour: 60,
+    },
   });
 }
 
 export async function markImportant(req: Request, res: Response): Promise<void> {
-  const post = await PostModel.findById(req.params.postId);
-  if (!post) {
-    res.status(404).json({ message: 'Post not found' });
+  const payload = postSignalSchema.parse(req.body);
+  const userRef = await resolveUserRef(payload.userId);
+  if (!userRef) {
+    res.status(400).json({ message: 'Invalid userId/mobile' });
     return;
   }
+
+  const validation = await validateSignalAction(req.params.postId, 'important', userRef, req);
+  if ('error' in validation) {
+    res.status(validation.error.code).json({ message: validation.error.message });
+    return;
+  }
+  const post = validation.post;
+
+  await PostSignalModel.create({
+    postId: post.id,
+    userId: userRef,
+    signalType: 'important',
+    ipAddress: req.ip,
+    deviceId: req.header('x-device-id') ?? '',
+    area: req.header('x-area') ?? post.locationTag ?? '',
+    accepted: true,
+  });
+
   post.importantVotes += 1;
+  post.importantPinnedUntil = new Date(Date.now() + 24 * 3600 * 1000);
+  if (post.importantVotes >= 10) {
+    post.topPlacementUntil = new Date(Date.now() + 24 * 3600 * 1000);
+  }
   await post.save();
 
   res.json({
     postId: post.id,
     importantVotes: post.importantVotes,
-    pinnedUntil: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+    pinnedUntil: post.importantPinnedUntil.toISOString(),
     topPlacement: post.importantVotes >= 10,
+    antiManipulation: {
+      uniquePerUserEnforced: true,
+      userRateLimitPerHour: 20,
+      ipDeviceRateLimitPerHour: 60,
+    },
   });
 }
 
@@ -333,6 +530,37 @@ export async function seedContacts(req: Request, res: Response): Promise<void> {
     { type: 'blood_donor', name: 'Adirai Blood Network', phone: '9123456789', area, available24x7: true },
   ]);
   res.json({ message: 'Contacts seeded', area });
+}
+
+export async function getPostSignals(req: Request, res: Response): Promise<void> {
+  const postId = req.params.postId;
+  if (!mongoose.isValidObjectId(postId)) {
+    res.status(400).json({ message: 'Invalid postId' });
+    return;
+  }
+  const [urgentAccepted, importantAccepted, rejected, suspiciousIps] = await Promise.all([
+    PostSignalModel.countDocuments({ postId, signalType: 'urgent', accepted: true }),
+    PostSignalModel.countDocuments({ postId, signalType: 'important', accepted: true }),
+    PostSignalModel.countDocuments({
+      postId,
+      signalType: { $in: ['urgent', 'important'] },
+      accepted: false,
+    }),
+    PostSignalModel.aggregate([
+      { $match: { postId: new mongoose.Types.ObjectId(postId), signalType: { $in: ['urgent', 'important'] } } },
+      { $group: { _id: '$ipAddress', count: { $sum: 1 } } },
+      { $match: { count: { $gte: 3 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]),
+  ]);
+
+  res.json({
+    postId,
+    accepted: { urgent: urgentAccepted, important: importantAccepted },
+    rejectedSignals: rejected,
+    suspiciousIps,
+  });
 }
 
 export function isValidObjectId(id: string): boolean {

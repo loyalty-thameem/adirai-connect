@@ -17,6 +17,7 @@ import {
   markUrgent,
   myComplaints,
   reactPost,
+  getPostSignals,
   seedContacts,
   votePoll,
 } from './community.controller.js';
@@ -28,6 +29,7 @@ communityRouter.post('/posts', createPost);
 communityRouter.post('/posts/:postId/react', reactPost);
 communityRouter.post('/posts/:postId/urgent', markUrgent);
 communityRouter.post('/posts/:postId/important', markImportant);
+communityRouter.get('/posts/:postId/signals', getPostSignals);
 
 communityRouter.post('/complaints', createComplaint);
 communityRouter.get('/complaints/me', myComplaints);
@@ -49,4 +51,3 @@ communityRouter.post('/groups', createGroup);
 communityRouter.get('/groups', listGroups);
 
 communityRouter.get('/suggestions', getSuggestions);
-

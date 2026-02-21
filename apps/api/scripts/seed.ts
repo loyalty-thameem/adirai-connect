@@ -9,6 +9,7 @@ import { SecurityEventModel } from '../src/modules/admin/security-event.model.js
 import { ContactModel } from '../src/modules/community/contact.model.js';
 import { EventModel } from '../src/modules/community/event.model.js';
 import { ListingModel } from '../src/modules/community/listing.model.js';
+import { PostSignalModel } from '../src/modules/community/post-signal.model.js';
 import { PollModel } from '../src/modules/community/poll.model.js';
 import { UserModel } from '../src/modules/users/user.model.js';
 
@@ -25,6 +26,7 @@ async function seed(): Promise<void> {
   await EventModel.deleteMany({});
   await ContactModel.deleteMany({});
   await PollModel.deleteMany({});
+  await PostSignalModel.deleteMany({});
 
   const users = await UserModel.insertMany([
     {
@@ -164,6 +166,28 @@ async function seed(): Promise<void> {
     endsAt: new Date(Date.now() + 5 * 24 * 3600 * 1000),
     createdBy: adminUser._id,
   });
+
+  await PostSignalModel.insertMany([
+    {
+      postId: post._id,
+      userId: adminUser._id,
+      signalType: 'important',
+      ipAddress: '127.0.0.2',
+      deviceId: 'seed-admin',
+      area: 'Adirai East',
+      accepted: true,
+    },
+    {
+      postId: post._id,
+      userId: demoUser._id,
+      signalType: 'urgent',
+      ipAddress: '127.0.0.1',
+      deviceId: 'seed-user',
+      area: 'Adirai East',
+      accepted: false,
+      rejectedReason: 'self_vote_disallowed',
+    },
+  ]);
 
   console.log('Seed complete');
   await mongoose.disconnect();

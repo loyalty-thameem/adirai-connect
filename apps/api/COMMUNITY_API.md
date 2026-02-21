@@ -6,9 +6,10 @@ Base URL: `http://localhost:4000/api/v1/community`
 
 - `GET /feed?area=Adirai%20East`
 - `POST /posts`
-- `POST /posts/:postId/react` with `action` = `like` | `comment` | `report`
-- `POST /posts/:postId/urgent`
-- `POST /posts/:postId/important`
+- `POST /posts/:postId/react` with body `{ "userId": "...", "action": "like|comment|report" }`
+- `POST /posts/:postId/urgent` with body `{ "userId": "..." }`
+- `POST /posts/:postId/important` with body `{ "userId": "..." }`
+- `GET /posts/:postId/signals` (accepted/rejected signal audit)
 
 ## Complaints
 
@@ -45,3 +46,11 @@ Base URL: `http://localhost:4000/api/v1/community`
 
 - `GET /suggestions?area=Adirai%20East`
 
+## Anti-Manipulation Rules (Step 5)
+
+- One `urgent` vote per user per post.
+- One `important` vote per user per post.
+- Cannot mark your own post as urgent/important.
+- User rate limit: max `20` urgent/important actions per hour.
+- IP/device rate limit: max `60` urgent/important actions per hour.
+- Suspicious clustering from same IP increments `suspiciousSignalsCount` and reduces feed score.

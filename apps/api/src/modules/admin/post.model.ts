@@ -19,6 +19,17 @@ const postSchema = new Schema(
     reportsCount: { type: Number, default: 0 },
     urgentVotes: { type: Number, default: 0 },
     importantVotes: { type: Number, default: 0 },
+    importantPinnedUntil: { type: Date },
+    topPlacementUntil: { type: Date },
+    urgentBoostTier: {
+      type: String,
+      enum: ['none', 'local', 'nearby', 'global'],
+      default: 'none',
+      index: true,
+    },
+    urgentBoostReach: { type: Number, default: 0 },
+    urgentBoostUpdatedAt: { type: Date },
+    suspiciousSignalsCount: { type: Number, default: 0 },
     moderationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'auto_flagged'] satisfies ModerationStatus[],
@@ -30,4 +41,3 @@ const postSchema = new Schema(
 );
 
 export const PostModel = model('Post', postSchema);
-

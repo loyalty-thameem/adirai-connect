@@ -172,6 +172,34 @@ export const openApiSpec = {
         },
       },
     },
+    '/community/posts/{postId}/urgent': {
+      post: {
+        summary: 'Mark post as urgent (anti-manipulation protected)',
+        responses: {
+          '200': { description: 'Urgent accepted' },
+          '409': { description: 'Already marked urgent' },
+          '429': { description: 'Rate limited' },
+        },
+      },
+    },
+    '/community/posts/{postId}/important': {
+      post: {
+        summary: 'Mark post as important (anti-manipulation protected)',
+        responses: {
+          '200': { description: 'Important accepted' },
+          '409': { description: 'Already marked important' },
+          '429': { description: 'Rate limited' },
+        },
+      },
+    },
+    '/community/posts/{postId}/signals': {
+      get: {
+        summary: 'Signal audit for a post',
+        responses: {
+          '200': { description: 'Signal counters' },
+        },
+      },
+    },
     '/community/complaints': {
       post: {
         summary: 'Create complaint',
